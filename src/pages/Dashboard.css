@@ -1,0 +1,157 @@
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  width: 100%;
+}
+
+/* Dashboard Controls Toolbar */
+.dashboard-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  padding: 16px var(--spacing-lg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.controls-left h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+.controls-left .subtitle {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.controls-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* State selector dropdown */
+.state-dropdown {
+  height: 38px;
+  padding: 0 16px;
+  border-radius: var(--button-radius);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-background);
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.state-dropdown:hover {
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+/* Refresh Button */
+.refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: var(--button-radius);
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+}
+
+.refresh-btn:hover {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.refresh-btn:hover svg {
+  color: white;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+/* KPI Section Row */
+.kpis-section {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-md);
+  width: 100%;
+}
+
+/* Main Grid Widgets Layout */
+.dashboard-grid-layout {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: var(--spacing-lg);
+  align-items: start;
+}
+
+.dashboard-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.gap-lg {
+  gap: var(--spacing-lg);
+}
+
+/* Split row inside right column (low stock + staff availability) */
+.dashboard-split-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-lg);
+}
+
+/* Responsive Grid Adapters */
+@media (max-width: 1200px) {
+  .kpis-section {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 992px) {
+  .dashboard-grid-layout {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-split-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 576px) {
+  .kpis-section {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-controls {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+  }
+  .controls-right {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .state-dropdown, .refresh-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

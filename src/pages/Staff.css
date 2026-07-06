@@ -1,0 +1,20 @@
+/* ── Staff page ───────────────────────────────────────── */
+.staff-page { padding: var(--spacing-lg); }
+
+.staff-cell { display: flex; align-items: center; gap: 10px; }
+
+.staff-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary), #7c3aed);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.staff-name { font-weight: 600; font-size: 14px; color: var(--color-text); }

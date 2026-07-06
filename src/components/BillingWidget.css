@@ -1,0 +1,74 @@
+.billing-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.billing-stat-card {
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.billing-stat-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.billing-stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.billing-stat-value.text-success {
+  color: var(--color-secondary);
+}
+
+.billing-stat-value-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Alert Styling */
+.billing-stat-card.alert-critical {
+  border-color: var(--color-danger);
+  background-color: var(--color-danger-light);
+}
+
+.billing-stat-card.alert-critical .billing-stat-value {
+  color: var(--color-danger);
+}
+
+.outstanding-alert-icon {
+  color: var(--color-danger);
+  animation: pulseAlert 2s infinite ease-in-out;
+}
+
+@keyframes pulseAlert {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+.billing-alert-banner {
+  background-color: var(--color-danger-light);
+  color: var(--color-danger);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--border-radius-sm);
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.billing-trend h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 12px;
+}

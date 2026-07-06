@@ -1,0 +1,190 @@
+.billing-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+/* ── KPI summary row ──────────────────────────────────── */
+.billing-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-md);
+}
+
+.billing-kpi {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: var(--card-padding);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.billing-kpi-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--border-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.billing-kpi-icon--success { background: rgba(34, 197, 94, 0.1);  color: var(--color-secondary); }
+.billing-kpi-icon--warning { background: rgba(245, 158, 11, 0.1); color: var(--color-warning); }
+.billing-kpi-icon--danger  { background: rgba(239, 68, 68, 0.1);  color: var(--color-danger); }
+
+.billing-kpi-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-bottom: 2px;
+}
+
+.billing-kpi-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+/* ── Invoice modal: services section ──────────────────── */
+.billing-services-section {
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.billing-services-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.billing-services-header h3 { font-size: 15px; font-weight: 600; }
+
+.service-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--spacing-sm);
+}
+
+.svc-name-field { flex: 2; }
+.svc-qty-field  { flex: 0.7; }
+.svc-rate-field { flex: 1; }
+
+.svc-amount {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  padding-bottom: 11px;
+  white-space: nowrap;
+  color: var(--color-text);
+}
+
+.form-field-label-spacer { display: block; height: 19px; }
+
+.svc-remove { align-self: flex-end; margin-bottom: 2px; }
+
+/* ── Invoice totals ───────────────────────────────────── */
+.invoice-totals {
+  border-top: 1px solid var(--color-border);
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.total-row--final {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--color-text);
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+}
+
+.total-row--outstanding {
+  font-weight: 700;
+  color: var(--color-danger);
+}
+
+.discount-input {
+  width: 120px;
+  height: var(--input-height);
+  padding: 0 12px;
+  text-align: right;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  font-size: 14px;
+  font-family: var(--font-family);
+}
+
+/* ── Payment modal hint ───────────────────────────────── */
+.field-hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* ── Invoice table ────────────────────────────────────── */
+.inv-id {
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.tr--overdue { background: rgba(239, 68, 68, 0.02); }
+
+/* ── Print invoice ────────────────────────────────────── */
+.invoice-print-body { padding: 8px; }
+
+.invoice-print-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.invoice-print-header h1 { font-size: 22px; font-weight: 700; }
+.invoice-print-header p  { font-size: 13px; color: var(--color-text-secondary); }
+
+.invoice-print-meta { text-align: right; font-size: 13px; }
+.invoice-print-meta p { line-height: 1.8; }
+
+.invoice-print-patient { font-size: 14px; margin-bottom: 12px; }
+
+.invoice-table { margin-bottom: 12px; }
+
+.invoice-totals--print { max-width: 320px; margin-left: auto; }
+
+@media print {
+  .no-print { display: none !important; }
+  .modal-overlay { position: static !important; background: none !important; padding: 0; }
+  .modal-box { box-shadow: none !important; border: none !important; max-height: none !important; }
+}
+
+@media (max-width: 768px) {
+  .billing-kpis { grid-template-columns: 1fr; }
+  .service-row { flex-direction: column; align-items: stretch; }
+  .svc-name-field, .svc-qty-field, .svc-rate-field { flex: none; width: 100%; }
+}

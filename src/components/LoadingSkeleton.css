@@ -1,0 +1,4 @@
+/* Skeleton classes are defined in global.css, but we can add component-specific tweaks if needed */
+.skeleton-text, .skeleton-title, .skeleton-circle {
+  display: block;
+}

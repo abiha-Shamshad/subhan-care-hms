@@ -1,0 +1,76 @@
+.quick-actions {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: var(--card-padding);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.quick-actions-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.quick-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: var(--input-height);
+  padding: 0 16px;
+  border-radius: var(--button-radius);
+  font-size: 14px;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.quick-action-btn--primary {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.quick-action-btn--primary:hover {
+  background-color: var(--color-primary-dark);
+  transform: translateY(-1px);
+}
+
+.quick-action-btn--secondary {
+  background-color: var(--color-secondary);
+  color: white;
+}
+
+.quick-action-btn--secondary:hover {
+  background-color: #16a34a; /* secondary dark */
+  transform: translateY(-1px);
+}
+
+.quick-action-btn--outline {
+  background-color: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+}
+
+.quick-action-btn--outline:hover {
+  background-color: var(--color-primary-light);
+  transform: translateY(-1px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .quick-actions-grid {
+    grid-template-columns: 1fr;
+  }
+}

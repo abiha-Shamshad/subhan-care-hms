@@ -1,0 +1,626 @@
+/* ════════════════════════════════════════════════
+   DOCTOR HOME — Today's Schedule / Work Queue
+   Role: Doctor · Task-focused, not metrics
+   ════════════════════════════════════════════════ */
+
+.doctor-home {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+/* ── Top toolbar ─────────────────────────────────── */
+.dh-topbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  padding: 16px var(--card-padding);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.dh-topbar-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dh-topbar h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* ── Summary chips ───────────────────────────────── */
+.dh-summary-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.dh-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.dh-chip--success {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--color-secondary);
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+.dh-chip--warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--color-warning);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.dh-chip--neutral {
+  background: rgba(100, 116, 139, 0.08);
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+
+.dh-topbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* ── Main two-column grid ────────────────────────── */
+.dh-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: var(--spacing-lg);
+  align-items: start;
+}
+
+/* ── Queue panel (left column) ───────────────────── */
+.dh-queue-panel {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.dh-queue-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px var(--card-padding);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dh-queue-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.dh-queue-count {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.dh-appt-list {
+  list-style: none;
+  padding: 8px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ── Appointment card ────────────────────────────── */
+.dh-appt-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 12px;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+  cursor: pointer;
+  border-left-width: 4px;
+  border-left-style: solid;
+  transition: background var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.dh-appt-card:hover {
+  background: var(--color-card);
+  box-shadow: var(--shadow-sm);
+}
+
+.dh-appt-card:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.dh-appt-card--upcoming     { border-left-color: var(--color-border); }
+.dh-appt-card--in-progress  { border-left-color: var(--color-warning); background: rgba(245, 158, 11, 0.03); }
+.dh-appt-card--completed    { border-left-color: var(--color-secondary); opacity: 0.75; }
+
+.dh-appt-card--selected {
+  background: rgba(37, 99, 235, 0.04);
+  border-color: var(--color-primary);
+  border-left-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.dh-appt-card--selected:hover { background: rgba(37, 99, 235, 0.06); }
+
+/* Time column */
+.dh-appt-time-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 46px;
+  flex-shrink: 0;
+}
+
+.dh-appt-time {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.dh-appt-end-time {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+/* Avatar */
+.dh-appt-avatar {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.dh-appt-card--in-progress .dh-appt-avatar {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--color-warning);
+}
+
+.dh-appt-card--completed .dh-appt-avatar {
+  background: rgba(34, 197, 94, 0.12);
+  color: var(--color-secondary);
+}
+
+/* Body */
+.dh-appt-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dh-appt-patient-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dh-appt-meta {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Right side: badge + action */
+.dh-appt-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ── Status badges ───────────────────────────────── */
+.dh-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dh-badge--upcoming    { background: rgba(100, 116, 139, 0.1); color: var(--color-text-secondary); }
+.dh-badge--in-progress { background: rgba(245, 158, 11, 0.12); color: var(--color-warning); }
+.dh-badge--completed   { background: rgba(34, 197, 94, 0.12);  color: var(--color-secondary); }
+
+/* ── Appointment action buttons ──────────────────── */
+.dh-appt-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--border-radius-sm);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-family);
+  border: 1px solid;
+  transition: all var(--transition-fast);
+}
+
+.dh-appt-action-btn--start {
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--color-primary);
+  border-color: rgba(37, 99, 235, 0.2);
+}
+
+.dh-appt-action-btn--start:hover {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.dh-appt-action-btn--complete {
+  background: rgba(34, 197, 94, 0.08);
+  color: var(--color-secondary);
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+.dh-appt-action-btn--complete:hover {
+  background: var(--color-secondary);
+  color: #fff;
+  border-color: var(--color-secondary);
+}
+
+/* ── Loading skeletons ───────────────────────────── */
+.dh-skeleton-list {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dh-skeleton-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 12px;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+}
+
+.dh-skeleton-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Empty queue ─────────────────────────────────── */
+.dh-empty-queue {
+  padding: 48px 20px;
+}
+
+/* ── Patient panel (right column) ────────────────── */
+.dh-panel-section {
+  position: sticky;
+  top: calc(var(--topbar-height) + 16px);
+}
+
+.dh-panel-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+/* Patient header */
+.dh-panel-patient-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 20px var(--card-padding);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.04) 0%, rgba(37, 99, 235, 0.01) 100%);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dh-panel-avatar {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  border: 2px solid rgba(37, 99, 235, 0.15);
+}
+
+.dh-panel-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 3px;
+}
+
+.dh-panel-meta {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-bottom: 2px;
+}
+
+.dh-panel-phone {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* Panel sections */
+.dh-panel-section {
+  padding: 16px var(--card-padding);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dh-panel-section:last-child {
+  border-bottom: none;
+}
+
+.dh-panel-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--color-text-muted);
+  margin-bottom: 10px;
+}
+
+.dh-panel-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+}
+
+.dh-panel-reason {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+/* Quick action buttons */
+.dh-quick-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-family);
+  margin-bottom: 8px;
+  transition: all var(--transition-fast);
+  text-align: left;
+}
+
+.dh-quick-btn:last-child { margin-bottom: 0; }
+
+.dh-quick-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.dh-quick-btn--primary {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.dh-quick-btn--primary:hover {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+.dh-quick-btn--secondary {
+  background: rgba(34, 197, 94, 0.08);
+  color: var(--color-secondary);
+  border-color: rgba(34, 197, 94, 0.25);
+}
+
+.dh-quick-btn--secondary:hover {
+  background: var(--color-secondary);
+  color: #fff;
+  border-color: var(--color-secondary);
+}
+
+/* Navigation links */
+.dh-panel-links {
+  padding: 12px var(--card-padding);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dh-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: var(--border-radius-sm);
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-family: var(--font-family);
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.dh-nav-link span { flex: 1; }
+
+.dh-nav-link:hover {
+  background: var(--color-background);
+  color: var(--color-primary);
+}
+
+.dh-nav-link:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ── Panel placeholder (nothing selected) ────────── */
+.dh-panel-placeholder {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--card-padding);
+}
+
+.dh-panel-placeholder-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  max-width: 200px;
+}
+
+.dh-placeholder-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+}
+
+.dh-placeholder-text {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+/* ── Quick prescription modal extras ─────────────── */
+.qrx-meds-section {
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.qrx-meds-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.qrx-section-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.qrx-med-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.qrx-name-field { flex: 1.6; }
+.qrx-freq-field { flex: 1; }
+
+.qrx-remove-btn {
+  flex-shrink: 0;
+  margin-bottom: 2px;
+}
+
+/* ── Responsive ──────────────────────────────────── */
+@media (max-width: 1024px) {
+  .dh-grid {
+    grid-template-columns: 1fr 280px;
+  }
+}
+
+@media (max-width: 860px) {
+  .dh-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dh-panel-section {
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .dh-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .dh-topbar-controls {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .dh-summary-chips {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .dh-appt-end-time { display: none; }
+
+  .dh-appt-meta { display: none; }
+
+  .dh-summary-chips {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}

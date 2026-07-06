@@ -1,0 +1,215 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* =============================================
+   SUBHAN CARE — GLOBAL DESIGN SYSTEM
+   ============================================= */
+
+:root {
+  /* Colors — Primary Palette */
+  --color-primary: #2563EB;
+  --color-primary-light: rgba(37, 99, 235, 0.08);
+  --color-primary-dark: #1D4ED8;
+  --color-secondary: #22C55E;
+  --color-secondary-light: rgba(34, 197, 94, 0.08);
+  --color-danger: #EF4444;
+  --color-danger-light: rgba(239, 68, 68, 0.08);
+  --color-warning: #F59E0B;
+  --color-warning-light: rgba(245, 158, 11, 0.08);
+
+  /* Colors — Neutrals */
+  --color-background: #F8FAFC;
+  --color-card: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-text: #1E293B;
+  --color-text-secondary: #64748B;
+  --color-text-muted: #94A3B8;
+
+  /* Typography */
+  --font-family: 'Poppins', sans-serif;
+
+  /* Spacing */
+  --spacing: 16px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --card-padding: 20px;
+  --input-height: 45px;
+
+  /* Borders */
+  --border-radius: 10px;
+  --border-radius-sm: 6px;
+  --border-radius-lg: 16px;
+  --button-radius: 8px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 350ms ease;
+
+  /* Layout */
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 72px;
+  --topbar-height: 64px;
+}
+
+/* =============================================
+   CSS RESET
+   ============================================= */
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-family);
+  color: var(--color-text);
+  background-color: var(--color-background);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+ul, ol {
+  list-style: none;
+}
+
+button {
+  font-family: var(--font-family);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-size: inherit;
+}
+
+input, select, textarea {
+  font-family: var(--font-family);
+  font-size: inherit;
+  border: none;
+  outline: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* =============================================
+   SCROLLBAR STYLING
+   ============================================= */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* =============================================
+   SKELETON LOADING ANIMATION
+   ============================================= */
+
+@keyframes skeletonPulse {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #E2E8F0 25%, #F1F5F9 50%, #E2E8F0 75%);
+  background-size: 200% 100%;
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+  border-radius: var(--border-radius-sm);
+}
+
+.skeleton-text {
+  height: 14px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+
+.skeleton-title {
+  height: 20px;
+  width: 60%;
+  margin-bottom: 12px;
+  border-radius: 4px;
+}
+
+.skeleton-circle {
+  border-radius: 50%;
+}
+
+.skeleton-card {
+  height: 100px;
+  border-radius: var(--border-radius);
+}
+
+/* =============================================
+   FOCUS STYLES (Accessibility)
+   ============================================= */
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* =============================================
+   UTILITY CLASSES
+   ============================================= */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+#root {
+  min-height: 100vh;
+}

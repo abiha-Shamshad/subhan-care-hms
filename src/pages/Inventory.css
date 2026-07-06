@@ -1,0 +1,23 @@
+.inventory-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.item-id {
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.qty-alert {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.tr--danger  { background: rgba(239, 68, 68, 0.02); }
+.tr--warning { background: rgba(245, 158, 11, 0.02); }

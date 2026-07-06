@@ -1,0 +1,119 @@
+.dashboard-widget {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: var(--card-padding);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.widget-title-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.widget-header-icon {
+  color: var(--color-primary);
+}
+
+.widget-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.widget-badge {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.widget-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  flex: 1;
+}
+
+.widget-divider {
+  border: 0;
+  height: 1px;
+  background-color: var(--color-border);
+  margin: var(--spacing-sm) 0;
+}
+
+/* Appointments List Section */
+.appointments-list-container {
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.appointments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.appointment-item {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  align-items: center;
+  padding: 10px var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  border-bottom: 1px solid #f1f5f9;
+  transition: background-color var(--transition-fast);
+}
+
+.appointment-item:hover {
+  background-color: var(--color-background);
+}
+
+.apt-time {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.apt-details {
+  display: flex;
+  flex-direction: column;
+  padding-right: 12px;
+}
+
+.apt-patient-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.apt-doctor-name {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.appointments-trend h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 12px;
+}
+
+/* Skeleton override */
+.dashboard-widget.loading {
+  justify-content: flex-start;
+  gap: 20px;
+}

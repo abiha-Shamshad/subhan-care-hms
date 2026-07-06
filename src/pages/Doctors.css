@@ -1,0 +1,96 @@
+/* ── Doctors page ─────────────────────────────────────── */
+.doctors-page { padding: var(--spacing-lg); }
+
+.doc-cell { display: flex; align-items: center; gap: 10px; }
+
+.doc-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.doc-name { font-weight: 600; font-size: 14px; color: var(--color-text); }
+.doc-sub  { font-size: 12px; color: var(--color-text-muted); }
+
+.doc-specialty-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--color-primary);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.patient-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+/* Doctor own-profile card */
+.doctor-own-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+  display: flex;
+  gap: var(--spacing-xl);
+  align-items: flex-start;
+  max-width: 700px;
+  box-shadow: var(--shadow-md);
+}
+
+.doc-avatar-lg {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.doc-own-details h3 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+.doc-qual {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: 10px 0;
+}
+
+.doc-own-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.doc-own-grid > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 640px) {
+  .doctor-own-card { flex-direction: column; }
+  .doc-own-grid { grid-template-columns: 1fr; }
+}

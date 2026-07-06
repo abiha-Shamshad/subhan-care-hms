@@ -1,0 +1,136 @@
+.staff-stats-summary {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.staff-stat-box {
+  padding: 12px 16px;
+  border-radius: var(--border-radius-sm);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+}
+
+.staff-stat-box.on-duty {
+  background-color: var(--color-secondary-light);
+  border-color: rgba(34, 197, 94, 0.1);
+  color: var(--color-secondary);
+}
+
+.staff-stat-box.off-duty {
+  background-color: var(--color-background);
+  color: var(--color-text-secondary);
+}
+
+.staff-stat-count {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.staff-stat-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+/* On duty progress ratio bar */
+.staff-duty-progress-area {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.staff-progress-label-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.staff-progress-track {
+  height: 8px;
+  background-color: var(--color-border);
+  border-radius: 4px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.staff-progress-bar {
+  height: 100%;
+  background-color: var(--color-secondary);
+  border-radius: 4px;
+  transition: width var(--transition-slow);
+}
+
+/* Staff status table listing */
+.staff-list-container {
+  max-height: 180px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.staff-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.staff-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  border-radius: var(--border-radius-sm);
+  transition: background-color var(--transition-fast);
+}
+
+.staff-list-item:hover {
+  background-color: var(--color-background);
+}
+
+.staff-list-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.staff-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.staff-status-dot.active {
+  background-color: var(--color-secondary);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+.staff-status-dot.inactive {
+  background-color: var(--color-text-muted);
+}
+
+.staff-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.staff-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+.staff-role {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.staff-status-text {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}

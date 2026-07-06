@@ -1,0 +1,225 @@
+/* ══════════════════════════════════════════════════
+   BILLING DASHBOARD — page-specific styles
+   Role: Billing Staff  ·  Read-only financial view
+   ══════════════════════════════════════════════════ */
+
+.billing-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+/* ── Header toolbar ─────────────────────────────── */
+.bd-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  padding: 16px var(--card-padding);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.bd-topbar h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.bd-topbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* ── KPI grid ───────────────────────────────────── */
+.bd-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-md);
+}
+
+/* ── Mid-section: chart + actions side-by-side ─── */
+.bd-mid-grid {
+  display: grid;
+  grid-template-columns: 1fr 296px;
+  gap: var(--spacing-md);
+  align-items: start;
+}
+
+/* ── Card shell ─────────────────────────────────── */
+.bd-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.bd-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: 14px var(--card-padding);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.bd-card-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.bd-card-subtitle {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.bd-card-body {
+  padding: var(--card-padding);
+}
+
+/* ── Chart skeleton ─────────────────────────────── */
+.bd-chart-skeleton {
+  width: 100%;
+  height: 220px;
+  border-radius: var(--border-radius-sm);
+}
+
+/* ── Quick actions ──────────────────────────────── */
+.bd-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bd-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-family);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.bd-action-btn:hover {
+  background: var(--color-card);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.06);
+}
+
+.bd-action-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.bd-action-icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bd-action-icon--primary {
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--color-primary);
+}
+
+.bd-action-icon--success {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--color-secondary);
+}
+
+.bd-action-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.bd-action-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  display: block;
+}
+
+.bd-action-desc {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Outstanding table ──────────────────────────── */
+.bd-table-body {
+  padding: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.bd-table-skeleton {
+  padding: var(--card-padding);
+}
+
+.bd-empty-wrapper {
+  padding: 40px;
+}
+
+/* ── Responsive breakpoints ─────────────────────── */
+@media (max-width: 1100px) {
+  .bd-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 960px) {
+  .bd-mid-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .bd-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .bd-topbar-controls {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 600px) {
+  .bd-kpis {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .bd-kpis {
+    grid-template-columns: 1fr;
+  }
+}
