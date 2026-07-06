@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   CalendarDays, Plus, Search, ChevronDown, X, Clock,
-  CheckCircle2, XCircle, AlertCircle, LayoutList, LayoutGrid
+  CheckCircle2, XCircle, AlertCircle, LayoutList, LayoutGrid, CalendarClock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import StatusBadge from '../components/StatusBadge';
@@ -128,6 +128,68 @@ const BookModal = ({ appt, appts, onClose, onSave }) => {
   );
 };
 
+// Focused reschedule modal — changes date + time only, keeping the rest of
+// the appointment intact, with a same-doctor slot-conflict check.
+const RescheduleModal = ({ appt, appts, onClose, onSave }) => {
+  const [date, setDate] = useState(appt.date);
+  const [time, setTime] = useState(appt.time);
+  const [error, setError] = useState('');
+
+  const conflict = date && time && appts.some(
+    a => a.id !== appt.id && a.doctor === appt.doctor && a.date === date && a.time === time && a.status !== 'cancelled'
+  );
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!date || !time) { setError('Both date and time are required.'); return; }
+    if (conflict) return;
+    // A rescheduled confirmed appointment reverts to pending for re-confirmation.
+    onSave({ ...appt, date, time, status: appt.status === 'confirmed' ? 'pending' : appt.status });
+  };
+
+  return (
+    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="resched-modal-title" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal-box modal-box--sm">
+        <div className="modal-header">
+          <h2 id="resched-modal-title">Reschedule Appointment</h2>
+          <button className="modal-close-btn" onClick={onClose} aria-label="Close"><X size={20} /></button>
+        </div>
+        <form className="modal-form" onSubmit={handleSubmit} noValidate>
+          <p className="modal-confirm-text">
+            <strong>{appt.patientName}</strong> with <strong>{appt.doctor}</strong>
+            <br />
+            <span className="text-muted">Currently: {appt.date} at {appt.time}</span>
+          </p>
+          <div className="form-row">
+            <div className={`form-field ${error && !date ? 'has-error' : ''}`}>
+              <label htmlFor="resched-date">New Date *</label>
+              <input id="resched-date" type="date" value={date} onChange={(e) => { setDate(e.target.value); setError(''); }} />
+            </div>
+            <div className={`form-field ${error && !time ? 'has-error' : ''}`}>
+              <label htmlFor="resched-time">New Time Slot *</label>
+              <select id="resched-time" value={time} onChange={(e) => { setTime(e.target.value); setError(''); }}>
+                <option value="">Select time</option>
+                {TIME_SLOTS.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+          </div>
+          {error && <span className="field-error">{error}</span>}
+          {conflict && (
+            <div className="alert-banner alert-banner--warning">
+              <AlertCircle size={16} />
+              Slot conflict: {appt.doctor} already has an appointment at {time} on {date}.
+            </div>
+          )}
+          <div className="modal-actions">
+            <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={conflict}>Confirm Reschedule</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 // 7-day calendar view component
 const CalendarView = ({ appts, canBook, onBook }) => {
   const today = new Date('2026-07-03');
@@ -173,8 +235,7 @@ const CalendarView = ({ appts, canBook, onBook }) => {
 };
 
 const Appointments = () => {
-  const { role, canEdit } = useAuth();
-  const isAdmin = canEdit('appointments');
+  const { role } = useAuth();
   const isDoctor = role === 'doctor';
 
   const [appts, setAppts] = useState(INITIAL_APPTS);
@@ -216,6 +277,12 @@ const Appointments = () => {
   const handleCancel = (appt) => {
     setAppts((prev) => prev.map((a) => a.id === appt.id ? { ...a, status: 'cancelled' } : a));
     showToast('Appointment cancelled.');
+    setModal(null);
+  };
+
+  const handleReschedule = (updated) => {
+    setAppts((prev) => prev.map((a) => a.id === updated.id ? updated : a));
+    showToast('Appointment rescheduled.');
     setModal(null);
   };
 
@@ -315,6 +382,9 @@ const Appointments = () => {
                                 <button className="icon-btn" title="Edit" onClick={() => setModal({ type: 'edit', data: a })} aria-label="Edit appointment"><Plus size={15} className="icon-rotate-45" aria-hidden="true" /></button>
                               )}
                               {(a.status === 'pending' || a.status === 'confirmed') && (
+                                <button className="icon-btn icon-btn--warning" title="Reschedule" onClick={() => setModal({ type: 'reschedule', data: a })} aria-label="Reschedule appointment"><CalendarClock size={15} /></button>
+                              )}
+                              {(a.status === 'pending' || a.status === 'confirmed') && (
                                 <button className="icon-btn icon-btn--danger" title="Cancel" onClick={() => setModal({ type: 'cancel', data: a })} aria-label="Cancel appointment"><XCircle size={15} /></button>
                               )}
                             </div>
@@ -332,6 +402,9 @@ const Appointments = () => {
 
       {(modal?.type === 'book' || modal?.type === 'edit') && (
         <BookModal appt={modal.data} appts={appts} onClose={() => setModal(null)} onSave={handleSave} />
+      )}
+      {modal?.type === 'reschedule' && (
+        <RescheduleModal appt={modal.data} appts={appts} onClose={() => setModal(null)} onSave={handleReschedule} />
       )}
       {modal?.type === 'cancel' && (
         <ConfirmModal

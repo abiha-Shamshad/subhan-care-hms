@@ -1,9 +1,12 @@
 import { useState } from 'react';
-import { Search, UserPlus, FileText, AlertTriangle, ArrowLeft, Plus } from 'lucide-react';
+import { Search, UserPlus, FileText, AlertTriangle, ArrowLeft, Plus, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import EmptyState from '../components/EmptyState';
-import LoadingSkeleton from '../components/LoadingSkeleton';
+import ConfirmModal from '../components/ConfirmModal';
+import useToast from '../hooks/useToast';
 import './Patients.css';
+
+const PAGE_SIZE = 6;
 
 // Initial Mock Patients Database
 const INITIAL_PATIENTS = [
@@ -70,7 +73,16 @@ const INITIAL_PATIENTS = [
       { id: 104, date: '2026-07-02', time: '10:00 AM', doctor: 'Dr. Ayesha Tariq', status: 'pending' }
     ],
     prescriptions: []
-  }
+  },
+  { id: 'PT-1004', name: 'Zainab Bibi', dob: '1990-02-18', age: 36, gender: 'Female', phone: '0301-2223344', cnic: '42101-2223344-6', address: 'House 8, Gulberg III, Lahore', emergencyContact: 'Imran Ali (Brother) - 0301-5556677', lastVisit: '2026-06-20', registrationDate: '2026-03-12', medicalHistory: [], appointments: [], prescriptions: [] },
+  { id: 'PT-1005', name: 'Bilal Hussain', dob: '1983-09-30', age: 42, gender: 'Male', phone: '0302-3334455', cnic: '42101-3334455-7', address: 'Flat 12, Model Town, Lahore', emergencyContact: 'Ayesha Hussain (Wife) - 0302-8889900', lastVisit: '2026-06-25', registrationDate: '2026-03-18', medicalHistory: [], appointments: [], prescriptions: [] },
+  { id: 'PT-1006', name: 'Maryam Sheikh', dob: '1998-12-05', age: 27, gender: 'Female', phone: '0303-4445566', cnic: '42101-4445566-8', address: 'House 55, Bahria Town, Rawalpindi', emergencyContact: 'Kamran Sheikh (Father) - 0303-1112233', lastVisit: '2026-07-01', registrationDate: '2026-04-02', medicalHistory: [], appointments: [], prescriptions: [] },
+  { id: 'PT-1007', name: 'Ali Raza', dob: '1975-06-14', age: 51, gender: 'Male', phone: '0304-5556677', cnic: '42101-5556677-9', address: 'Apartment 3B, Clifton, Karachi', emergencyContact: 'Nadia Raza (Wife) - 0304-2223344', lastVisit: '2026-06-18', registrationDate: '2026-04-10', medicalHistory: [], appointments: [], prescriptions: [] },
+  { id: 'PT-1008', name: 'Nadia Perveen', dob: '1988-03-22', age: 38, gender: 'Female', phone: '0305-6667788', cnic: '42101-6667788-1', address: 'House 21, Johar Town, Lahore', emergencyContact: 'Faisal Perveen (Husband) - 0305-3334455', lastVisit: '2026-06-30', registrationDate: '2026-04-19', medicalHistory: [], appointments: [], prescriptions: [] },
+  { id: 'PT-1009', name: 'Usman Ghani', dob: '1995-07-09', age: 30, gender: 'Male', phone: '0306-7778899', cnic: '42101-7778899-2', address: 'Street 9, F-8, Islamabad', emergencyContact: 'Sana Ghani (Sister) - 0306-4445566', lastVisit: '2026-06-22', registrationDate: '2026-05-03', medicalHistory: [], appointments: [], prescriptions: [] },
+  { id: 'PT-1010', name: 'Fatima Zahra', dob: '2001-11-28', age: 24, gender: 'Female', phone: '0307-8889900', cnic: '42101-8889900-3', address: 'House 14, Wapda Town, Lahore', emergencyContact: 'Hassan Zahra (Father) - 0307-5556677', lastVisit: '2026-07-02', registrationDate: '2026-05-15', medicalHistory: [], appointments: [], prescriptions: [] },
+  { id: 'PT-1011', name: 'Kamran Shah', dob: '1970-04-03', age: 56, gender: 'Male', phone: '0308-9990011', cnic: '42101-9990011-4', address: 'Bungalow 7, Cantt, Peshawar', emergencyContact: 'Rahat Shah (Son) - 0308-6667788', lastVisit: '2026-06-12', registrationDate: '2026-05-22', medicalHistory: [], appointments: [], prescriptions: [] },
+  { id: 'PT-1012', name: 'Hina Saeed', dob: '1993-08-17', age: 32, gender: 'Female', phone: '0309-0001122', cnic: '42101-0001122-5', address: 'Flat 9C, Gulshan, Karachi', emergencyContact: 'Saeed Ahmed (Father) - 0309-7778899', lastVisit: '2026-06-29', registrationDate: '2026-06-01', medicalHistory: [], appointments: [], prescriptions: [] }
 ];
 
 const Patients = () => {
@@ -81,10 +93,12 @@ const Patients = () => {
   
   // Simulation Role State
   const [userRole, setUserRole] = useState('admin'); // 'admin', 'receptionist', 'doctor'
-  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [modal, setModal] = useState(null); // { type: 'delete', data: patient }
+  const { toast, showToast } = useToast();
 
   // Form States
   const [regForm, setRegForm] = useState({
@@ -117,6 +131,23 @@ const Patients = () => {
     return matchQuery && matchDateRange;
   });
 
+  // Pagination (clamps to valid range as the filtered set changes)
+  const totalPages = Math.max(1, Math.ceil(filteredPatients.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const pagedPatients = filteredPatients.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const goToPage = (page) => setCurrentPage(Math.min(Math.max(1, page), totalPages));
+
+  // Delete a patient record (admin only) — confirmed via ConfirmModal
+  const handleDeletePatient = (patient) => {
+    setPatients((prev) => prev.filter((p) => p.id !== patient.id));
+    setModal(null);
+    if (selectedPatientId === patient.id) {
+      setSelectedPatientId(null);
+      setActiveView('list');
+    }
+    showToast(`Patient ${patient.name} deleted.`);
+  };
+
   // Calculate age helper
   const calculateAge = (dobString) => {
     if (!dobString) return 0;
@@ -134,7 +165,8 @@ const Patients = () => {
   const handleSearchChange = (e) => {
     const val = e.target.value;
     setSearchQuery(val);
-    
+    setCurrentPage(1);
+
     // Simulate duplicate check warning if search matches exactly
     const exists = patients.some(p => p.name.toLowerCase() === val.toLowerCase().trim());
     if (exists && val.trim().length > 3) {
@@ -301,7 +333,7 @@ const Patients = () => {
                 type="date"
                 className="filter-date-input"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={(e) => { setStartDate(e.target.value); setCurrentPage(1); }}
                 aria-label="Filter registration start date"
               />
               <span aria-hidden="true">to</span>
@@ -309,7 +341,7 @@ const Patients = () => {
                 type="date"
                 className="filter-date-input"
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={(e) => { setEndDate(e.target.value); setCurrentPage(1); }}
                 aria-label="Filter registration end date"
               />
             </div>
@@ -378,10 +410,11 @@ const Patients = () => {
                     <th>Gender</th>
                     <th>Phone</th>
                     <th>Last Visit</th>
+                    {isAdmin && <th aria-label="Actions"></th>}
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredPatients.map((p) => (
+                  {pagedPatients.map((p) => (
                     <tr
                       key={p.id}
                       onClick={() => {
@@ -405,12 +438,57 @@ const Patients = () => {
                       <td>{p.gender}</td>
                       <td>{p.phone}</td>
                       <td>{p.lastVisit}</td>
+                      {isAdmin && (
+                        <td className="patients-row-actions">
+                          <button
+                            className="icon-btn icon-btn--danger"
+                            title="Delete patient"
+                            aria-label={`Delete patient ${p.name}`}
+                            onClick={(e) => { e.stopPropagation(); setModal({ type: 'delete', data: p }); }}
+                          >
+                            <Trash2 size={15} aria-hidden="true" />
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
               </table>
             )}
           </div>
+
+          {/* Pagination */}
+          {filteredPatients.length > 0 && totalPages > 1 && (
+            <nav className="pagination" aria-label="Patient list pagination">
+              <button
+                className="pagination-btn"
+                onClick={() => goToPage(safePage - 1)}
+                disabled={safePage === 1}
+                aria-label="Previous page"
+              >
+                <ChevronLeft size={16} aria-hidden="true" />
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  className={`pagination-btn ${page === safePage ? 'active' : ''}`}
+                  onClick={() => goToPage(page)}
+                  aria-label={`Page ${page}`}
+                  aria-current={page === safePage ? 'page' : undefined}
+                >
+                  {page}
+                </button>
+              ))}
+              <button
+                className="pagination-btn"
+                onClick={() => goToPage(safePage + 1)}
+                disabled={safePage === totalPages}
+                aria-label="Next page"
+              >
+                <ChevronRight size={16} aria-hidden="true" />
+              </button>
+            </nav>
+          )}
         </>
       )}
 
@@ -859,6 +937,20 @@ const Patients = () => {
           </div>
         </div>
       )}
+
+      {/* Delete confirmation */}
+      {modal?.type === 'delete' && (
+        <ConfirmModal
+          title="Delete Patient Record"
+          message={`Are you sure you want to permanently delete ${modal.data.name} (${modal.data.id})? This action cannot be undone.`}
+          confirmLabel="Delete"
+          variant="danger"
+          onConfirm={() => handleDeletePatient(modal.data)}
+          onClose={() => setModal(null)}
+        />
+      )}
+
+      {toast && <div className="toast toast--success" role="status">{toast}</div>}
     </div>
   );
 };

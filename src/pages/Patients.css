@@ -701,3 +701,63 @@
   font-size: 13px;
   font-weight: 600;
 }
+
+/* Row action cell (delete button) — align right, reveal on row hover */
+.patients-row-actions {
+  text-align: right;
+  width: 56px;
+}
+
+.patients-table tbody tr .patients-row-actions .icon-btn {
+  opacity: 0.55;
+  transition: opacity var(--transition-fast);
+}
+
+.patients-table tbody tr:hover .patients-row-actions .icon-btn,
+.patients-table tbody tr:focus-within .patients-row-actions .icon-btn {
+  opacity: 1;
+}
+
+/* ── Pagination ───────────────────────────────────────── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: var(--spacing-md);
+}
+
+.pagination-btn {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  background: var(--color-card);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.pagination-btn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.pagination-btn.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

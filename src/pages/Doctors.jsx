@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Search, Plus, Edit2, PowerOff, Power, X, ChevronDown,
+  Search, Plus, Edit2, PowerOff, Power, X, ChevronDown, Trash2,
   Stethoscope, Phone, Mail, Calendar, Users, Award
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -164,6 +164,11 @@ const Doctors = () => {
     setModal(null);
   };
 
+  const handleDelete = (doc) => {
+    setDoctors((prev) => prev.filter((d) => d.id !== doc.id));
+    setModal(null);
+  };
+
   return (
     <div className="doctors-page">
       <div className="page-header">
@@ -234,6 +239,9 @@ const Doctors = () => {
                         <button className={`icon-btn ${doc.status === 'active' ? 'icon-btn--warning' : 'icon-btn--success'}`} title={doc.status === 'active' ? 'Set On Leave' : 'Reactivate'} onClick={() => setModal({ type: 'confirm', data: doc })} aria-label={`${doc.status === 'active' ? 'Deactivate' : 'Reactivate'} ${doc.name}`}>
                           {doc.status === 'active' ? <PowerOff size={15} /> : <Power size={15} />}
                         </button>
+                        <button className="icon-btn icon-btn--danger" title="Delete doctor" onClick={() => setModal({ type: 'delete', data: doc })} aria-label={`Delete ${doc.name}`}>
+                          <Trash2 size={15} />
+                        </button>
                       </div>
                     </td>
                   )}
@@ -253,6 +261,16 @@ const Doctors = () => {
           confirmLabel={modal.data.status === 'active' ? 'Set On Leave' : 'Reactivate'}
           variant={modal.data.status === 'active' ? 'warning' : 'secondary'}
           onConfirm={() => handleToggleStatus(modal.data)}
+          onClose={() => setModal(null)}
+        />
+      )}
+      {modal?.type === 'delete' && (
+        <ConfirmModal
+          title="Delete Doctor"
+          message={`Permanently remove ${modal.data.name} (${modal.data.id}) from the directory? This cannot be undone.`}
+          confirmLabel="Delete"
+          variant="danger"
+          onConfirm={() => handleDelete(modal.data)}
           onClose={() => setModal(null)}
         />
       )}
