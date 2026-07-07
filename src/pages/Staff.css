@@ -18,3 +18,19 @@
 }
 
 .staff-name { font-weight: 600; font-size: 14px; color: var(--color-text); }
+
+/* ── Responsive ───────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .staff-page { padding: var(--spacing-md); }
+}
+
+@media (max-width: 768px) {
+  /* Let the wide account table scroll horizontally instead of squashing */
+  .staff-page .table-container { overflow-x: auto; }
+  .staff-page .data-table { min-width: 720px; }
+}
+
+@media (max-width: 480px) {
+  .staff-avatar { width: 32px; height: 32px; font-size: 11px; }
+  .staff-name { font-size: 13px; }
+}

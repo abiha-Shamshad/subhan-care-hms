@@ -57,6 +57,65 @@
   --sidebar-width: 260px;
   --sidebar-collapsed-width: 72px;
   --topbar-height: 64px;
+
+  color-scheme: light;
+}
+
+/* =============================================
+   DARK THEME
+   Applied when the user (or index.html's pre-paint
+   script) sets data-theme="dark" on <html>.
+   ============================================= */
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-primary: #3B82F6;
+  --color-primary-light: rgba(59, 130, 246, 0.16);
+  --color-primary-dark: #60A5FA;
+  --color-secondary: #34D399;
+  --color-secondary-light: rgba(52, 211, 153, 0.16);
+  --color-danger: #F87171;
+  --color-danger-light: rgba(248, 113, 113, 0.16);
+  --color-warning: #FBBF24;
+  --color-warning-light: rgba(251, 191, 36, 0.16);
+
+  --color-background: #0F172A;
+  --color-card: #1E293B;
+  --color-border: #334155;
+  --color-text: #F1F5F9;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted: #64748B;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.40);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.55);
+}
+
+/* Fallback for users whose OS prefers dark and who have not made an explicit
+   choice — covers the rare case where the pre-paint script did not run. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    color-scheme: dark;
+    --color-primary: #3B82F6;
+    --color-primary-light: rgba(59, 130, 246, 0.16);
+    --color-primary-dark: #60A5FA;
+    --color-secondary: #34D399;
+    --color-secondary-light: rgba(52, 211, 153, 0.16);
+    --color-danger: #F87171;
+    --color-danger-light: rgba(248, 113, 113, 0.16);
+    --color-warning: #FBBF24;
+    --color-warning-light: rgba(251, 191, 36, 0.16);
+    --color-background: #0F172A;
+    --color-card: #1E293B;
+    --color-border: #334155;
+    --color-text: #F1F5F9;
+    --color-text-secondary: #94A3B8;
+    --color-text-muted: #64748B;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.40);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.55);
+  }
 }
 
 /* =============================================
@@ -83,6 +142,7 @@ body {
   background-color: var(--color-background);
   line-height: 1.6;
   min-height: 100vh;
+  transition: background-color var(--transition-base), color var(--transition-base);
 }
 
 a {
@@ -154,6 +214,11 @@ img {
   background-size: 200% 100%;
   animation: skeletonPulse 1.5s ease-in-out infinite;
   border-radius: var(--border-radius-sm);
+}
+
+:root[data-theme="dark"] .skeleton {
+  background: linear-gradient(90deg, #1E293B 25%, #334155 50%, #1E293B 75%);
+  background-size: 200% 100%;
 }
 
 .skeleton-text {

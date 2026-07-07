@@ -1,6 +1,7 @@
 import { Bell, LogOut, Menu } from 'lucide-react';
 import { useAuth, ROLE_LABELS } from '../context/AuthContext';
 import { useNavigation } from '../context/NavigationContext';
+import ThemeToggle from './ThemeToggle';
 import './Topbar.css';
 
 const getInitials = (name) =>
@@ -63,6 +64,8 @@ const Topbar = ({ onMenuToggle, activeTitle = 'Dashboard' }) => {
             aria-label="Search dashboard"
           />
         </div>
+
+        <ThemeToggle />
 
         <button className="topbar-notification-btn" aria-label="Notifications, 3 unread">
           <Bell size={20} aria-hidden="true" />

@@ -4,6 +4,7 @@ import ForgotPassword from './ForgotPassword';
 import VerifyOtp from './VerifyOtp';
 import ResetPassword from './ResetPassword';
 import ResetSuccess from './ResetSuccess';
+import ThemeToggle from '../components/ThemeToggle';
 
 /**
  * Pre-authentication flow controller. Swaps between the login screen and the
@@ -17,30 +18,39 @@ const AuthScreen = () => {
 
   const goLogin = () => setView('login');
 
-  switch (view) {
-    case 'forgot':
-      return (
-        <ForgotPassword
-          initialEmail={email}
-          onSent={(e) => { setEmail(e); setView('otp'); }}
-          onBack={goLogin}
-        />
-      );
-    case 'otp':
-      return (
-        <VerifyOtp
-          email={email}
-          onVerified={() => setView('reset')}
-          onBack={goLogin}
-        />
-      );
-    case 'reset':
-      return <ResetPassword onReset={() => setView('success')} />;
-    case 'success':
-      return <ResetSuccess onDone={goLogin} />;
-    default:
-      return <LoginPage onForgotPassword={() => setView('forgot')} />;
-  }
+  const renderView = () => {
+    switch (view) {
+      case 'forgot':
+        return (
+          <ForgotPassword
+            initialEmail={email}
+            onSent={(e) => { setEmail(e); setView('otp'); }}
+            onBack={goLogin}
+          />
+        );
+      case 'otp':
+        return (
+          <VerifyOtp
+            email={email}
+            onVerified={() => setView('reset')}
+            onBack={goLogin}
+          />
+        );
+      case 'reset':
+        return <ResetPassword onReset={() => setView('success')} />;
+      case 'success':
+        return <ResetSuccess onDone={goLogin} />;
+      default:
+        return <LoginPage onForgotPassword={() => setView('forgot')} />;
+    }
+  };
+
+  return (
+    <>
+      <ThemeToggle floating />
+      {renderView()}
+    </>
+  );
 };
 
 export default AuthScreen;

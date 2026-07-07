@@ -1,5 +1,6 @@
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NavigationProvider, useNavigation } from './context/NavigationContext';
+import { ThemeProvider } from './context/ThemeContext';
 import DashboardLayout from './layouts/DashboardLayout';
 import Dashboard from './pages/Dashboard';
 import BillingDashboard from './pages/BillingDashboard';
@@ -102,11 +103,13 @@ function AppGate() {
 
 function App() {
   return (
-    <AuthProvider>
-      <NavigationProvider>
-        <AppGate />
-      </NavigationProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <NavigationProvider>
+          <AppGate />
+        </NavigationProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
