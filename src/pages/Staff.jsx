@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Plus, Edit2, UserX, UserCheck, ChevronDown, UserCog, KeyRound } from 'lucide-react';
+import { Search, Plus, Edit2, UserX, UserCheck, ChevronDown, UserCog, KeyRound, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import StatusBadge from '../components/StatusBadge';
 import EmptyState from '../components/EmptyState';

@@ -410,7 +410,7 @@ const Patients = () => {
                     <th>Gender</th>
                     <th>Phone</th>
                     <th>Last Visit</th>
-                    {isAdmin && <th aria-label="Actions"></th>}
+                    <th aria-label="Actions"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -438,8 +438,21 @@ const Patients = () => {
                       <td>{p.gender}</td>
                       <td>{p.phone}</td>
                       <td>{p.lastVisit}</td>
-                      {isAdmin && (
-                        <td className="patients-row-actions">
+                      <td className="patients-row-actions">
+                        <button
+                          className="icon-btn"
+                          title="View medical history"
+                          aria-label={`View medical history for ${p.name}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedPatientId(p.id);
+                            setActiveView('profile');
+                            setActiveTab('history');
+                          }}
+                        >
+                          <FileText size={15} aria-hidden="true" />
+                        </button>
+                        {isAdmin && (
                           <button
                             className="icon-btn icon-btn--danger"
                             title="Delete patient"
@@ -448,8 +461,8 @@ const Patients = () => {
                           >
                             <Trash2 size={15} aria-hidden="true" />
                           </button>
-                        </td>
-                      )}
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
