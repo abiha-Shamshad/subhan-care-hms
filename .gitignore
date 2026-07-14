@@ -1,24 +1,14 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# Unrelated local tooling/artifacts at the workspace root — not part of this project
+.claude/
+.agents/
+screenshots/
+screenshots.zip
 
-node_modules
-dist
-dist-ssr
-*.local
+# Backend
+backend/node_modules
+backend/.env
+backend/npm-debug.log*
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Frontend (frontend/.gitignore also covers this, kept here for safety with root-level tooling)
+frontend/node_modules
+frontend/dist
