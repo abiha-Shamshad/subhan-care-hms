@@ -18,7 +18,7 @@ const PaymentModal = ({ invoice, onClose, onRecord }) => {
     >
       <div className="modal-box modal-box--sm">
         <div className="modal-header">
-          <h2 id="pay-modal-title">Record Payment — {invoice.id}</h2>
+          <h2 id="pay-modal-title">Record Payment — {invoice.invoiceId ?? invoice.id}</h2>
           <button className="modal-close-btn" onClick={onClose} aria-label="Close dialog">
             <X size={20} />
           </button>

@@ -3,21 +3,16 @@ import { Search, Plus, Edit2, AlertTriangle, Package, ChevronDown, X, Trash2 } f
 import { useAuth } from '../context/AuthContext';
 import StatusBadge from '../components/StatusBadge';
 import EmptyState from '../components/EmptyState';
+import LoadingSkeleton from '../components/LoadingSkeleton';
 import ConfirmModal from '../components/ConfirmModal';
 import useToast from '../hooks/useToast';
+import useApiResource from '../hooks/useApiResource';
+import useTableFilters from '../hooks/useTableFilters';
+import { inventoryService } from '../services/api';
 import './Inventory.css';
 
 const CATEGORIES = ['Antibiotics', 'Analgesics', 'Antihypertensives', 'Vitamins', 'Antidiabetics', 'Antiseptics', 'IV Fluids', 'Equipment', 'Disposables', 'Other'];
 const UNITS = ['Tablets', 'Capsules', 'Vials', 'Bottles', 'Sachets', 'Strips', 'Units', 'Boxes'];
-
-const INITIAL_INVENTORY = [
-  { id: 'MED-001', name: 'Paracetamol 500mg',   category: 'Analgesics',        unit: 'Tablets',  quantity: 450, reorderLevel: 100, rate: 2.5,  supplier: 'MediPak Ltd', expiry: '2027-12-31', status: 'in-stock' },
-  { id: 'MED-002', name: 'Amoxicillin 500mg',   category: 'Antibiotics',       unit: 'Capsules', quantity: 80,  reorderLevel: 100, rate: 15,   supplier: 'PharmaCorp',  expiry: '2026-11-30', status: 'low-stock' },
-  { id: 'MED-003', name: 'Atorvastatin 10mg',   category: 'Antihypertensives', unit: 'Tablets',  quantity: 200, reorderLevel: 50,  rate: 8,    supplier: 'GenMed',      expiry: '2027-06-30', status: 'in-stock' },
-  { id: 'MED-004', name: 'Normal Saline 0.9%',  category: 'IV Fluids',         unit: 'Bottles',  quantity: 15,  reorderLevel: 30,  rate: 80,   supplier: 'IVPak',       expiry: '2027-03-31', status: 'low-stock' },
-  { id: 'MED-005', name: 'Insulin Glargine',    category: 'Antidiabetics',     unit: 'Vials',    quantity: 0,   reorderLevel: 10,  rate: 450,  supplier: 'NovoNord',    expiry: '2026-09-30', status: 'out-of-stock' },
-  { id: 'MED-006', name: 'Vitamin C 500mg',     category: 'Vitamins',          unit: 'Tablets',  quantity: 600, reorderLevel: 100, rate: 3,    supplier: 'VitaCare',    expiry: '2028-01-31', status: 'in-stock' },
-];
 
 const BLANK_ITEM = { name: '', category: '', unit: '', quantity: '', reorderLevel: '', rate: '', supplier: '', expiry: '' };
 
@@ -25,12 +20,6 @@ const STOCK_STATUS_META = {
   'in-stock':     { label: 'In Stock',     badgeStatus: 'confirmed' },
   'low-stock':    { label: 'Low Stock',    badgeStatus: 'pending' },
   'out-of-stock': { label: 'Out of Stock', badgeStatus: 'cancelled' },
-};
-
-const deriveStatus = (quantity, reorderLevel) => {
-  if (quantity === 0) return 'out-of-stock';
-  if (quantity <= reorderLevel) return 'low-stock';
-  return 'in-stock';
 };
 
 const validateItem = (form) => {
@@ -44,7 +33,7 @@ const validateItem = (form) => {
 };
 
 const InventoryModal = ({ item, onClose, onSave }) => {
-  const isEdit = !!item?.id;
+  const isEdit = !!item?.itemId;
   const [form, setForm] = useState(isEdit ? { ...item } : { ...BLANK_ITEM });
   const [errors, setErrors] = useState({});
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -136,46 +125,72 @@ const InventoryModal = ({ item, onClose, onSave }) => {
 
 const Inventory = () => {
   const { role, canEdit } = useAuth();
-  const isAdmin = canEdit('inventory');
-  const isPharmacist = role === 'pharmacist';
-  const canManage = isAdmin || isPharmacist;
+  const canManage = canEdit('inventory'); // admin and pharmacist both have full access
+  const isAdmin = role === 'admin'; // deletion stays admin-only
 
-  const [items, setItems] = useState(INITIAL_INVENTORY);
-  const [search, setSearch] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const { data: itemData, loading, error, refetch } = useApiResource(() => inventoryService.getAll());
+  const items = itemData || [];
+
   const [modal, setModal] = useState(null);
   const { toast, showToast } = useToast();
 
   const lowStockCount = items.filter((i) => i.status === 'low-stock' || i.status === 'out-of-stock').length;
 
-  const filtered = items.filter((item) => {
-    const q = search.toLowerCase();
-    return (
-      (item.name.toLowerCase().includes(q) || item.supplier.toLowerCase().includes(q)) &&
-      (!filterCategory || item.category === filterCategory) &&
-      (!filterStatus || item.status === filterStatus)
-    );
+  const {
+    filtered, search, setSearch, filterValues, setFilter, dateFrom, setDateFrom, dateTo, setDateTo, clearAll,
+  } = useTableFilters(items, {
+    searchFields: [(item) => item.name, (item) => item.supplier],
+    filters: { category: (item) => item.category, status: (item) => item.status },
+    dateField: (item) => item.expiry,
   });
 
-  const handleSave = (form) => {
-    const status = deriveStatus(form.quantity, form.reorderLevel);
-    if (form.id) {
-      setItems((prev) => prev.map((i) => i.id === form.id ? { ...i, ...form, status } : i));
-      showToast('Item updated.');
-    } else {
-      const id = `MED-${String(items.length + 1).padStart(3, '0')}`;
-      setItems((prev) => [...prev, { ...form, id, status }]);
-      showToast('Item added to inventory.');
+  const handleSave = async (form) => {
+    try {
+      if (form.itemId) {
+        await inventoryService.update(form.itemId, form);
+        showToast('Item updated.');
+      } else {
+        await inventoryService.create(form);
+        showToast('Item added to inventory.');
+      }
+      await refetch();
+      setModal(null);
+    } catch (err) {
+      showToast(err.message || 'Failed to save item.');
     }
-    setModal(null);
   };
 
-  const handleDelete = (item) => {
-    setItems((prev) => prev.filter((i) => i.id !== item.id));
-    showToast(`${item.name} removed.`);
-    setModal(null);
+  const handleDelete = async (item) => {
+    try {
+      await inventoryService.delete(item.itemId);
+      await refetch();
+      showToast(`${item.name} removed.`);
+      setModal(null);
+    } catch (err) {
+      showToast(err.message || 'Failed to remove item.');
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="inventory-page" aria-busy="true" aria-label="Loading…">
+        {[1, 2, 3].map(n => (
+          <div key={n} className="skeleton-row">
+            <LoadingSkeleton variant="text" width="120px" />
+            <LoadingSkeleton variant="text" width="200px" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page-centered">
+        <EmptyState icon={Package} message={error} actionLabel="Retry" onAction={refetch} />
+      </div>
+    );
+  }
 
   return (
     <div className="inventory-page">
@@ -211,19 +226,24 @@ const Inventory = () => {
         </div>
         <div className="filter-group">
           <ChevronDown size={14} className="filter-icon" aria-hidden="true" />
-          <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} aria-label="Filter by category">
+          <select value={filterValues.category} onChange={(e) => setFilter('category', e.target.value)} aria-label="Filter by category">
             <option value="">All Categories</option>
             {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
         <div className="filter-group">
           <ChevronDown size={14} className="filter-icon" aria-hidden="true" />
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} aria-label="Filter by stock status">
+          <select value={filterValues.status} onChange={(e) => setFilter('status', e.target.value)} aria-label="Filter by stock status">
             <option value="">All Statuses</option>
             <option value="in-stock">In Stock</option>
             <option value="low-stock">Low Stock</option>
             <option value="out-of-stock">Out of Stock</option>
           </select>
+        </div>
+        <div className="filter-group date-range-group">
+          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} aria-label="Expiry from" title="Expiry from" />
+          <span className="text-muted">to</span>
+          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} aria-label="Expiry to" title="Expiry to" />
         </div>
       </div>
 
@@ -233,7 +253,7 @@ const Inventory = () => {
             icon={Package}
             message="No inventory items match your search."
             actionLabel="Clear Filters"
-            onAction={() => { setSearch(''); setFilterCategory(''); setFilterStatus(''); }}
+            onAction={clearAll}
           />
         ) : (
           <table className="data-table" aria-label="Inventory list">
@@ -255,10 +275,10 @@ const Inventory = () => {
                 const meta = STOCK_STATUS_META[item.status] || STOCK_STATUS_META['in-stock'];
                 return (
                   <tr
-                    key={item.id}
+                    key={item.itemId}
                     className={item.status === 'out-of-stock' ? 'tr--danger' : item.status === 'low-stock' ? 'tr--warning' : ''}
                   >
-                    <td><span className="item-id">{item.id}</span></td>
+                    <td><span className="item-id">{item.itemId}</span></td>
                     <td>
                       <div className="cell-name">{item.name}</div>
                       <div className="text-muted">{item.supplier}</div>

@@ -1,24 +1,36 @@
 import { useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
-import { PATIENTS, SERVICE_CATALOG } from '../constants/billingData';
+import { PATIENTS as STATIC_PATIENTS, SERVICE_CATALOG } from '../constants/billingData';
 
 const BLANK_SERVICE = { name: '', qty: 1, rate: '' };
 
 const validate = (form) => {
   const e = {};
-  if (!form.patient) e.patient = 'Patient is required';
+  if (!form.patientId) e.patientId = 'Patient is required';
   if (!form.dueDate) e.dueDate = 'Due date is required';
   if (form.services.some(s => !s.name || !s.rate)) e.services = 'All service fields are required';
   return e;
 };
 
-const InvoiceModal = ({ onClose, onSave }) => {
+const idFromDisplayString = (str) => str.match(/\(([^)]+)\)\s*$/)?.[1] || '';
+
+/**
+ * Create-invoice form, shared by Billing.jsx (live patients + optional
+ * appointment-linked prefill) and BillingDashboard.jsx (falls back to the
+ * static demo patient list when no `patients` prop is given).
+ */
+const InvoiceModal = ({ patients, initialValues, onClose, onSave }) => {
+  const patientOptions = patients
+    ? patients.map(p => ({ id: p.patientId, label: `${p.name} (${p.patientId})` }))
+    : STATIC_PATIENTS.map(p => ({ id: idFromDisplayString(p), label: p }));
+
   const [form, setForm] = useState({
-    patient: '',
-    date: '2026-07-03',
-    dueDate: '',
-    services: [{ ...BLANK_SERVICE }],
-    discount: '',
+    patientId: initialValues?.patientId || '',
+    appointmentId: initialValues?.appointmentId || null,
+    date: initialValues?.date || new Date().toISOString().split('T')[0],
+    dueDate: initialValues?.dueDate || '',
+    services: initialValues?.services?.length ? initialValues.services : [{ ...BLANK_SERVICE }],
+    discount: initialValues?.discount ?? '',
   });
   const [errors, setErrors] = useState({});
 
@@ -38,7 +50,8 @@ const InvoiceModal = ({ onClose, onSave }) => {
     e.preventDefault();
     const errs = validate(form);
     if (Object.keys(errs).length) { setErrors(errs); return; }
-    onSave({ ...form, discount: disc, paid: 0, status: 'unpaid' });
+    const patientLabel = patientOptions.find(p => p.id === form.patientId)?.label || '';
+    onSave({ ...form, patient: patientLabel, discount: disc, paid: 0, status: 'unpaid' });
   };
 
   return (
@@ -57,18 +70,23 @@ const InvoiceModal = ({ onClose, onSave }) => {
           </button>
         </div>
         <form className="modal-form" onSubmit={handleSubmit} noValidate>
+          {form.appointmentId && (
+            <div className="alert-banner alert-banner--info">
+              Linked to appointment <strong>{form.appointmentId}</strong>
+            </div>
+          )}
           <div className="form-row">
-            <div className={`form-field ${errors.patient ? 'has-error' : ''}`}>
+            <div className={`form-field ${errors.patientId ? 'has-error' : ''}`}>
               <label htmlFor="inv-patient">Patient *</label>
               <select
                 id="inv-patient"
-                value={form.patient}
-                onChange={(e) => setForm((f) => ({ ...f, patient: e.target.value }))}
+                value={form.patientId}
+                onChange={(e) => setForm((f) => ({ ...f, patientId: e.target.value }))}
               >
                 <option value="">Select patient</option>
-                {PATIENTS.map(p => <option key={p} value={p}>{p}</option>)}
+                {patientOptions.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
               </select>
-              {errors.patient && <span className="field-error">{errors.patient}</span>}
+              {errors.patientId && <span className="field-error">{errors.patientId}</span>}
             </div>
             <div className={`form-field ${errors.dueDate ? 'has-error' : ''}`}>
               <label htmlFor="inv-due">Due Date *</label>
@@ -101,6 +119,7 @@ const InvoiceModal = ({ onClose, onSave }) => {
                   >
                     <option value="">Select service</option>
                     {SERVICE_CATALOG.map(s => <option key={s} value={s}>{s}</option>)}
+                    {svc.name && !SERVICE_CATALOG.includes(svc.name) && <option value={svc.name}>{svc.name}</option>}
                   </select>
                 </div>
                 <div className="form-field svc-qty-field">

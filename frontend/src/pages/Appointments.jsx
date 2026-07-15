@@ -1,28 +1,22 @@
 import { useState } from 'react';
 import {
   CalendarDays, Plus, Search, ChevronDown, X, Clock,
-  CheckCircle2, XCircle, AlertCircle, LayoutList, LayoutGrid, CalendarClock
+  CheckCircle2, XCircle, AlertCircle, LayoutList, LayoutGrid, CalendarClock, ClipboardList
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigation } from '../context/NavigationContext';
 import StatusBadge from '../components/StatusBadge';
 import EmptyState from '../components/EmptyState';
+import LoadingSkeleton from '../components/LoadingSkeleton';
 import ConfirmModal from '../components/ConfirmModal';
 import useToast from '../hooks/useToast';
+import useApiResource from '../hooks/useApiResource';
+import useTableFilters from '../hooks/useTableFilters';
+import { appointmentService, doctorService, patientService } from '../services/api';
 import './Appointments.css';
 
-const DOCTORS = ['Dr. Fatima Noor', 'Dr. Usman Ali', 'Dr. Ayesha Tariq', 'Dr. Bilal Mahmood', 'Dr. Sana Riaz'];
 const APPT_TYPES = ['Consultation', 'Follow-up', 'Emergency', 'Procedure', 'Check-up'];
 const STATUS_OPTIONS = ['pending', 'confirmed', 'completed', 'cancelled'];
-
-const INITIAL_APPTS = [
-  { id: 'APT-001', patientName: 'Ahmed Khan', patientId: 'PT-1001', doctor: 'Dr. Fatima Noor', date: '2026-07-03', time: '09:00', type: 'Consultation', status: 'confirmed', notes: '' },
-  { id: 'APT-002', patientName: 'Sara Malik', patientId: 'PT-1002', doctor: 'Dr. Usman Ali', date: '2026-07-03', time: '09:30', type: 'Follow-up', status: 'confirmed', notes: 'Post-op check' },
-  { id: 'APT-003', patientName: 'Hassan Raza', patientId: 'PT-1003', doctor: 'Dr. Ayesha Tariq', date: '2026-07-03', time: '10:00', type: 'Check-up', status: 'pending', notes: '' },
-  { id: 'APT-004', patientName: 'Maryam Iqbal', patientId: 'PT-1004', doctor: 'Dr. Sana Riaz', date: '2026-07-03', time: '11:00', type: 'Consultation', status: 'completed', notes: '' },
-  { id: 'APT-005', patientName: 'Bilal Chaudhry', patientId: 'PT-1005', doctor: 'Dr. Fatima Noor', date: '2026-07-04', time: '09:00', type: 'Emergency', status: 'pending', notes: 'Chest pain' },
-  { id: 'APT-006', patientName: 'Nida Hussain', patientId: 'PT-1006', doctor: 'Dr. Usman Ali', date: '2026-07-04', time: '10:30', type: 'Follow-up', status: 'cancelled', notes: '' },
-  { id: 'APT-007', patientName: 'Tariq Butt', patientId: 'PT-1007', doctor: 'Dr. Bilal Mahmood', date: '2026-07-05', time: '14:00', type: 'Consultation', status: 'confirmed', notes: '' },
-];
 
 const TIME_SLOTS = ['08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00'];
 
@@ -33,26 +27,26 @@ const STATUS_META = {
   cancelled: { icon: XCircle,        label: 'Cancelled', next: null },
 };
 
-const BLANK_FORM = { patientName: '', patientId: '', doctor: '', date: '', time: '', type: '', notes: '' };
+const BLANK_FORM = { patientId: '', doctorId: '', date: '', time: '', type: '', notes: '' };
 
 const validate = (form) => {
   const e = {};
-  if (!form.patientName.trim()) e.patientName = 'Patient name is required';
-  if (!form.doctor) e.doctor = 'Doctor is required';
+  if (!form.patientId) e.patientId = 'Patient is required';
+  if (!form.doctorId) e.doctorId = 'Doctor is required';
   if (!form.date) e.date = 'Date is required';
   if (!form.time) e.time = 'Time is required';
   if (!form.type) e.type = 'Appointment type is required';
   return e;
 };
 
-const BookModal = ({ appt, appts, onClose, onSave }) => {
+const BookModal = ({ appt, appts, patients, doctors, onClose, onSave }) => {
   const isEdit = !!appt?.id;
-  const [form, setForm] = useState(isEdit ? { ...appt } : { ...BLANK_FORM });
+  const [form, setForm] = useState(isEdit ? { ...appt } : { ...BLANK_FORM, ...(appt || {}) });
   const [errors, setErrors] = useState({});
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  const isConflict = !isEdit && form.doctor && form.date && form.time &&
-    appts.some(a => a.doctor === form.doctor && a.date === form.date && a.time === form.time && a.status !== 'cancelled');
+  const isConflict = !isEdit && form.doctorId && form.date && form.time &&
+    appts.some(a => a.doctorId?.doctorId === form.doctorId && a.date === form.date && a.time === form.time && a.status !== 'cancelled');
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -71,18 +65,21 @@ const BookModal = ({ appt, appts, onClose, onSave }) => {
         </div>
         <form className="modal-form" onSubmit={handleSubmit} noValidate>
           <div className="form-row">
-            <div className={`form-field ${errors.patientName ? 'has-error' : ''}`}>
-              <label htmlFor="apt-patient">Patient Name *</label>
-              <input id="apt-patient" value={form.patientName} onChange={(e) => set('patientName', e.target.value)} placeholder="Patient full name" />
-              {errors.patientName && <span className="field-error">{errors.patientName}</span>}
-            </div>
-            <div className={`form-field ${errors.doctor ? 'has-error' : ''}`}>
-              <label htmlFor="apt-doctor">Doctor *</label>
-              <select id="apt-doctor" value={form.doctor} onChange={(e) => set('doctor', e.target.value)}>
-                <option value="">Select doctor</option>
-                {DOCTORS.map((d) => <option key={d} value={d}>{d}</option>)}
+            <div className={`form-field ${errors.patientId ? 'has-error' : ''}`}>
+              <label htmlFor="apt-patient">Patient *</label>
+              <select id="apt-patient" value={form.patientId} onChange={(e) => set('patientId', e.target.value)}>
+                <option value="">Select patient</option>
+                {patients.map((p) => <option key={p.patientId} value={p.patientId}>{p.name} ({p.patientId})</option>)}
               </select>
-              {errors.doctor && <span className="field-error">{errors.doctor}</span>}
+              {errors.patientId && <span className="field-error">{errors.patientId}</span>}
+            </div>
+            <div className={`form-field ${errors.doctorId ? 'has-error' : ''}`}>
+              <label htmlFor="apt-doctor">Doctor *</label>
+              <select id="apt-doctor" value={form.doctorId} onChange={(e) => set('doctorId', e.target.value)}>
+                <option value="">Select doctor</option>
+                {doctors.map((d) => <option key={d.doctorId} value={d.doctorId}>{d.name}</option>)}
+              </select>
+              {errors.doctorId && <span className="field-error">{errors.doctorId}</span>}
             </div>
           </div>
           <div className="form-row">
@@ -111,7 +108,7 @@ const BookModal = ({ appt, appts, onClose, onSave }) => {
           {isConflict && (
             <div className="alert-banner alert-banner--warning">
               <AlertCircle size={16} />
-              Time slot conflict: {form.doctor} already has an appointment at {form.time} on {form.date}.
+              Time slot conflict: this doctor already has an appointment at {form.time} on {form.date}.
             </div>
           )}
           <div className="form-field">
@@ -136,7 +133,7 @@ const RescheduleModal = ({ appt, appts, onClose, onSave }) => {
   const [error, setError] = useState('');
 
   const conflict = date && time && appts.some(
-    a => a.id !== appt.id && a.doctor === appt.doctor && a.date === date && a.time === time && a.status !== 'cancelled'
+    a => a.apptId !== appt.apptId && a.doctor === appt.doctor && a.date === date && a.time === time && a.status !== 'cancelled'
   );
 
   const handleSubmit = (e) => {
@@ -144,7 +141,7 @@ const RescheduleModal = ({ appt, appts, onClose, onSave }) => {
     if (!date || !time) { setError('Both date and time are required.'); return; }
     if (conflict) return;
     // A rescheduled confirmed appointment reverts to pending for re-confirmation.
-    onSave({ ...appt, date, time, status: appt.status === 'confirmed' ? 'pending' : appt.status });
+    onSave({ apptId: appt.apptId, date, time, status: appt.status === 'confirmed' ? 'pending' : appt.status });
   };
 
   return (
@@ -192,7 +189,7 @@ const RescheduleModal = ({ appt, appts, onClose, onSave }) => {
 
 // 7-day calendar view component
 const CalendarView = ({ appts, canBook, onBook }) => {
-  const today = new Date('2026-07-03');
+  const today = new Date();
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(today);
     d.setDate(today.getDate() + i);
@@ -219,7 +216,7 @@ const CalendarView = ({ appts, canBook, onBook }) => {
               {dayAppts.length === 0
                 ? <span className="cal-empty">No appointments</span>
                 : dayAppts.map((a) => (
-                  <div key={a.id} className={`cal-appt-chip cal-appt--${a.status}`}>
+                  <div key={a.apptId} className={`cal-appt-chip cal-appt--${a.status}`}>
                     <span className="cal-appt-time">{a.time}</span>
                     <span className="cal-appt-patient">{a.patientName}</span>
                     <span className="cal-appt-doctor text-muted">{a.doctor.split(' ').pop()}</span>
@@ -236,58 +233,102 @@ const CalendarView = ({ appts, canBook, onBook }) => {
 
 const Appointments = () => {
   const { role } = useAuth();
+  const { navigate } = useNavigation();
   const isDoctor = role === 'doctor';
 
-  const [appts, setAppts] = useState(INITIAL_APPTS);
+  const { data: appts, loading, error, refetch } = useApiResource(() => appointmentService.getAll());
+  // Booking/filtering by doctor is receptionist/admin-only — doctors can't view the
+  // doctors module at all, so skip a fetch that would otherwise 403 for them.
+  const { data: doctorList } = useApiResource(() => (isDoctor ? Promise.resolve([]) : doctorService.getAll()), [isDoctor]);
+  const { data: patientList } = useApiResource(() => (isDoctor ? Promise.resolve([]) : patientService.getAll()), [isDoctor]);
+
   const [view, setView] = useState('list');
-  const [search, setSearch] = useState('');
-  const [filterDoctor, setFilterDoctor] = useState(isDoctor ? 'Dr. Fatima Noor' : '');
-  const [filterStatus, setFilterStatus] = useState('');
   const [modal, setModal] = useState(null);
   const { toast, showToast } = useToast();
 
-  // Doctor sees own appointments only
-  const baseAppts = isDoctor ? appts.filter(a => a.doctor === 'Dr. Fatima Noor') : appts;
+  const allAppts = appts || [];
+  const doctors = doctorList || [];
+  const patients = patientList || [];
 
-  const filtered = baseAppts.filter((a) => {
-    const q = search.toLowerCase();
-    return (a.patientName.toLowerCase().includes(q) || a.doctor.toLowerCase().includes(q)) &&
-           (!filterDoctor || a.doctor === filterDoctor) &&
-           (!filterStatus || a.status === filterStatus);
+  const {
+    filtered, search, setSearch, filterValues, setFilter, dateFrom, setDateFrom, dateTo, setDateTo, clearAll,
+  } = useTableFilters(allAppts, {
+    searchFields: [(a) => a.patientName, (a) => a.doctor],
+    filters: { doctor: (a) => a.doctor, status: (a) => a.status },
+    dateField: (a) => a.date,
   });
 
-  const handleSave = (form) => {
-    if (form.id) {
-      setAppts((prev) => prev.map((a) => a.id === form.id ? { ...a, ...form } : a));
-    } else {
-      const id = `APT-${String(appts.length + 1).padStart(3, '0')}`;
-      setAppts((prev) => [...prev, { ...form, id, status: 'pending' }]);
+  const handleSave = async (form) => {
+    try {
+      const payload = { patientId: form.patientId, doctorId: form.doctorId, date: form.date, time: form.time, type: form.type, notes: form.notes };
+      if (form.id) {
+        await appointmentService.update(form.id, payload);
+      } else {
+        await appointmentService.create(payload);
+      }
+      await refetch();
+      showToast('Appointment saved.');
+      setModal(null);
+    } catch (err) {
+      showToast(err.message || 'Failed to save appointment.');
     }
-    showToast('Appointment saved.');
-    setModal(null);
   };
 
-  const handleAdvanceStatus = (appt) => {
+  const handleAdvanceStatus = async (appt) => {
     const next = STATUS_META[appt.status]?.next;
     if (!next) return;
-    setAppts((prev) => prev.map((a) => a.id === appt.id ? { ...a, status: next } : a));
+    await appointmentService.update(appt.apptId, { status: next });
+    await refetch();
     showToast(`Marked as ${next}.`);
   };
 
-  const handleCancel = (appt) => {
-    setAppts((prev) => prev.map((a) => a.id === appt.id ? { ...a, status: 'cancelled' } : a));
+  const handleCancel = async (appt) => {
+    await appointmentService.update(appt.apptId, { status: 'cancelled' });
+    await refetch();
     showToast('Appointment cancelled.');
     setModal(null);
   };
 
-  const handleReschedule = (updated) => {
-    setAppts((prev) => prev.map((a) => a.id === updated.id ? updated : a));
+  const handleReschedule = async (updated) => {
+    await appointmentService.update(updated.apptId, { date: updated.date, time: updated.time, status: updated.status });
+    await refetch();
     showToast('Appointment rescheduled.');
     setModal(null);
   };
 
-  const todayCount = appts.filter(a => a.date === '2026-07-03' && a.status !== 'cancelled').length;
-  const pendingCount = appts.filter(a => a.status === 'pending').length;
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayCount = allAppts.filter(a => a.date === todayStr && a.status !== 'cancelled').length;
+  const pendingCount = allAppts.filter(a => a.status === 'pending').length;
+
+  const openEdit = (appt) => setModal({
+    type: 'edit',
+    data: { id: appt.apptId, patientId: appt.patientId?.patientId, doctorId: appt.doctorId?.doctorId, date: appt.date, time: appt.time, type: appt.type, notes: appt.notes },
+  });
+
+  const handleWritePrescription = (appt) => {
+    navigate('prescriptions', { prefillPatientId: appt.patientId?.patientId });
+  };
+
+  if (loading) {
+    return (
+      <div className="appts-page" aria-busy="true" aria-label="Loading…">
+        {[1, 2, 3].map(n => (
+          <div key={n} className="skeleton-row">
+            <LoadingSkeleton variant="text" width="120px" />
+            <LoadingSkeleton variant="text" width="200px" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page-centered">
+        <EmptyState icon={CalendarDays} message={error} actionLabel="Retry" onAction={refetch} />
+      </div>
+    );
+  }
 
   return (
     <div className="appts-page">
@@ -321,24 +362,29 @@ const Appointments = () => {
             {!isDoctor && (
               <div className="filter-group">
                 <ChevronDown size={14} className="filter-icon" />
-                <select value={filterDoctor} onChange={(e) => setFilterDoctor(e.target.value)} aria-label="Filter by doctor">
+                <select value={filterValues.doctor} onChange={(e) => setFilter('doctor', e.target.value)} aria-label="Filter by doctor">
                   <option value="">All Doctors</option>
-                  {DOCTORS.map((d) => <option key={d} value={d}>{d}</option>)}
+                  {doctors.map((d) => <option key={d.doctorId} value={d.name}>{d.name}</option>)}
                 </select>
               </div>
             )}
             <div className="filter-group">
               <ChevronDown size={14} className="filter-icon" />
-              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} aria-label="Filter by status">
+              <select value={filterValues.status} onChange={(e) => setFilter('status', e.target.value)} aria-label="Filter by status">
                 <option value="">All Statuses</option>
                 {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
               </select>
+            </div>
+            <div className="filter-group date-range-group">
+              <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} aria-label="From date" />
+              <span className="text-muted">to</span>
+              <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} aria-label="To date" />
             </div>
           </div>
 
           <div className="table-container">
             {filtered.length === 0 ? (
-              <EmptyState icon={CalendarDays} message="No appointments found." actionLabel="Clear Filters" onAction={() => { setSearch(''); setFilterDoctor(isDoctor ? 'Dr. Fatima Noor' : ''); setFilterStatus(''); }} />
+              <EmptyState icon={CalendarDays} message="No appointments found." actionLabel="Clear Filters" onAction={clearAll} />
             ) : (
               <table className="data-table" aria-label="Appointments list">
                 <thead>
@@ -348,20 +394,20 @@ const Appointments = () => {
                     <th>Date & Time</th>
                     <th>Type</th>
                     <th>Status</th>
-                    {!isDoctor && <th>Actions</th>}
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((a) => {
                     const meta = STATUS_META[a.status];
                     return (
-                      <tr key={a.id}>
+                      <tr key={a.apptId}>
                         <td>
                           <div className="appt-patient-cell">
                             <div className="appt-avatar">{a.patientName.split(' ').map(w => w[0]).join('').slice(0,2)}</div>
                             <div>
                               <div className="cell-name">{a.patientName}</div>
-                              <div className="text-muted">{a.patientId}</div>
+                              <div className="text-muted">{a.patientId?.patientId}</div>
                             </div>
                           </div>
                         </td>
@@ -372,24 +418,30 @@ const Appointments = () => {
                         </td>
                         <td><span className="appt-type-tag">{a.type}</span></td>
                         <td><StatusBadge status={a.status} label={meta.label} /></td>
-                        {!isDoctor && (
-                          <td>
-                            <div className="action-btns">
-                              {meta.next && (
-                                <button className="icon-btn icon-btn--success" title={`Mark as ${meta.next}`} onClick={() => handleAdvanceStatus(a)} aria-label={`Advance to ${meta.next}`}><CheckCircle2 size={15} /></button>
-                              )}
-                              {a.status !== 'completed' && a.status !== 'cancelled' && (
-                                <button className="icon-btn" title="Edit" onClick={() => setModal({ type: 'edit', data: a })} aria-label="Edit appointment"><Plus size={15} className="icon-rotate-45" aria-hidden="true" /></button>
-                              )}
-                              {(a.status === 'pending' || a.status === 'confirmed') && (
-                                <button className="icon-btn icon-btn--warning" title="Reschedule" onClick={() => setModal({ type: 'reschedule', data: a })} aria-label="Reschedule appointment"><CalendarClock size={15} /></button>
-                              )}
-                              {(a.status === 'pending' || a.status === 'confirmed') && (
-                                <button className="icon-btn icon-btn--danger" title="Cancel" onClick={() => setModal({ type: 'cancel', data: a })} aria-label="Cancel appointment"><XCircle size={15} /></button>
-                              )}
-                            </div>
-                          </td>
-                        )}
+                        <td>
+                          <div className="action-btns">
+                            {isDoctor ? (
+                              a.status === 'completed' && (
+                                <button className="icon-btn icon-btn--success" title="Write prescription" onClick={() => handleWritePrescription(a)} aria-label={`Write prescription for ${a.patientName}`}><ClipboardList size={15} /></button>
+                              )
+                            ) : (
+                              <>
+                                {meta.next && (
+                                  <button className="icon-btn icon-btn--success" title={`Mark as ${meta.next}`} onClick={() => handleAdvanceStatus(a)} aria-label={`Advance to ${meta.next}`}><CheckCircle2 size={15} /></button>
+                                )}
+                                {a.status !== 'completed' && a.status !== 'cancelled' && (
+                                  <button className="icon-btn" title="Edit" onClick={() => openEdit(a)} aria-label="Edit appointment"><Plus size={15} className="icon-rotate-45" aria-hidden="true" /></button>
+                                )}
+                                {(a.status === 'pending' || a.status === 'confirmed') && (
+                                  <button className="icon-btn icon-btn--warning" title="Reschedule" onClick={() => setModal({ type: 'reschedule', data: a })} aria-label="Reschedule appointment"><CalendarClock size={15} /></button>
+                                )}
+                                {(a.status === 'pending' || a.status === 'confirmed') && (
+                                  <button className="icon-btn icon-btn--danger" title="Cancel" onClick={() => setModal({ type: 'cancel', data: a })} aria-label="Cancel appointment"><XCircle size={15} /></button>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     );
                   })}
@@ -401,10 +453,10 @@ const Appointments = () => {
       )}
 
       {(modal?.type === 'book' || modal?.type === 'edit') && (
-        <BookModal appt={modal.data} appts={appts} onClose={() => setModal(null)} onSave={handleSave} />
+        <BookModal appt={modal.data} appts={allAppts} patients={patients} doctors={doctors} onClose={() => setModal(null)} onSave={handleSave} />
       )}
       {modal?.type === 'reschedule' && (
-        <RescheduleModal appt={modal.data} appts={appts} onClose={() => setModal(null)} onSave={handleReschedule} />
+        <RescheduleModal appt={modal.data} appts={allAppts} onClose={() => setModal(null)} onSave={handleReschedule} />
       )}
       {modal?.type === 'cancel' && (
         <ConfirmModal

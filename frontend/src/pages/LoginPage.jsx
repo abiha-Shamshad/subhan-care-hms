@@ -52,24 +52,21 @@ const LoginPage = ({ onForgotPassword }) => {
     return Object.keys(next).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     if (!validate()) return;
 
     setLoading(true);
-    // Simulated network latency — swap for authService.login() when the API is live.
-    setTimeout(() => {
-      const result = login(email.trim(), password);
-      if (result.success) {
-        if (remember) localStorage.setItem(REMEMBER_KEY, email.trim());
-        else localStorage.removeItem(REMEMBER_KEY);
-        // On success the app unmounts this screen via the auth gate.
-      } else {
-        setError(result.error);
-        setLoading(false);
-      }
-    }, 600);
+    const result = await login(email.trim(), password);
+    if (result.success) {
+      if (remember) localStorage.setItem(REMEMBER_KEY, email.trim());
+      else localStorage.removeItem(REMEMBER_KEY);
+      // On success the app unmounts this screen via the auth gate.
+    } else {
+      setError(result.error);
+      setLoading(false);
+    }
   };
 
   const applyDemoCredential = (cred) => {

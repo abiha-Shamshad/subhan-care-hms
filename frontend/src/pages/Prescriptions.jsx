@@ -1,64 +1,26 @@
-import { useState } from 'react';
-import { Plus, Search, ChevronDown, X, Trash2, ClipboardList, CheckCircle2, Lock } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Search, ChevronDown, X, Trash2, ClipboardList, CheckCircle2, Lock, Download } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import StatusBadge from '../components/StatusBadge';
+import { useNavigation } from '../context/NavigationContext';
 import EmptyState from '../components/EmptyState';
+import LoadingSkeleton from '../components/LoadingSkeleton';
 import ConfirmModal from '../components/ConfirmModal';
 import useToast from '../hooks/useToast';
+import useApiResource from '../hooks/useApiResource';
+import useTableFilters from '../hooks/useTableFilters';
+import { prescriptionService, patientService } from '../services/api';
+import { generatePrescriptionPdf } from '../utils/pdf';
 import './Prescriptions.css';
 
-const PATIENTS = ['Ahmed Khan (PT-1001)', 'Sara Malik (PT-1002)', 'Hassan Raza (PT-1003)', 'Maryam Iqbal (PT-1004)'];
 const FREQUENCIES = ['Once daily', 'Twice daily', 'Three times daily', 'Four times daily', 'Every 8 hours', 'Every 12 hours', 'As needed', 'At night'];
 const DURATIONS = ['3 days', '5 days', '7 days', '10 days', '14 days', '1 month', '3 months', 'Ongoing'];
 
 const BLANK_MED = { name: '', dosage: '', frequency: '', duration: '', instructions: '' };
-
-const INITIAL_RX = [
-  {
-    id: 'RX-001',
-    patient: 'Ahmed Khan (PT-1001)',
-    doctor: 'Dr. Fatima Noor',
-    date: '2026-06-28',
-    diagnosis: 'Hypertension, Hyperlipidaemia',
-    medications: [
-      { name: 'Aspirin', dosage: '75mg', frequency: 'Once daily', duration: 'Ongoing', instructions: 'Take after meal' },
-      { name: 'Atorvastatin', dosage: '10mg', frequency: 'At night', duration: 'Ongoing', instructions: 'Avoid grapefruit' },
-    ],
-    notes: 'Monitor BP weekly',
-    status: 'dispensed',
-  },
-  {
-    id: 'RX-002',
-    patient: 'Sara Malik (PT-1002)',
-    doctor: 'Dr. Usman Ali',
-    date: '2026-07-01',
-    diagnosis: 'Post-operative pain management',
-    medications: [
-      { name: 'Ibuprofen', dosage: '400mg', frequency: 'Twice daily', duration: '7 days', instructions: 'Take with food' },
-    ],
-    notes: '',
-    status: 'dispensed',
-  },
-  {
-    id: 'RX-003',
-    patient: 'Hassan Raza (PT-1003)',
-    doctor: 'Dr. Fatima Noor',
-    date: '2026-07-03',
-    diagnosis: 'Viral upper respiratory infection',
-    medications: [
-      { name: 'Paracetamol', dosage: '500mg', frequency: 'Three times daily', duration: '5 days', instructions: 'Avoid alcohol' },
-      { name: 'Chlorpheniramine', dosage: '4mg', frequency: 'Twice daily', duration: '5 days', instructions: 'May cause drowsiness' },
-    ],
-    notes: 'Rest advised, hydrate well',
-    status: 'pending',
-  },
-];
-
-const BLANK_RX = { patient: '', diagnosis: '', notes: '', medications: [{ ...BLANK_MED }] };
+const BLANK_RX = { patientId: '', diagnosis: '', notes: '', medications: [{ ...BLANK_MED }] };
 
 const validate = (form) => {
   const e = {};
-  if (!form.patient) e.patient = 'Patient is required';
+  if (!form.patientId) e.patientId = 'Patient is required';
   if (!form.diagnosis.trim()) e.diagnosis = 'Diagnosis is required';
   if (form.medications.length === 0) e.medications = 'At least one medication is required';
   form.medications.forEach((m, i) => {
@@ -69,9 +31,11 @@ const validate = (form) => {
   return e;
 };
 
-const RxModal = ({ rx, onClose, onSave }) => {
+const RxModal = ({ rx, patients, onClose, onSave }) => {
   const isEdit = !!rx?.id;
-  const [form, setForm] = useState(isEdit ? { ...rx, medications: rx.medications.map(m => ({ ...m })) } : { ...BLANK_RX, medications: [{ ...BLANK_MED }] });
+  const [form, setForm] = useState(
+    isEdit ? { ...rx, medications: rx.medications.map(m => ({ ...m })) } : { ...BLANK_RX, medications: [{ ...BLANK_MED }], ...(rx || {}) }
+  );
   const [errors, setErrors] = useState({});
 
   const setField = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -99,13 +63,17 @@ const RxModal = ({ rx, onClose, onSave }) => {
         </div>
         <form className="modal-form" onSubmit={handleSubmit} noValidate>
           <div className="form-row">
-            <div className={`form-field ${errors.patient ? 'has-error' : ''}`}>
+            <div className={`form-field ${errors.patientId ? 'has-error' : ''}`}>
               <label htmlFor="rx-patient">Patient *</label>
-              <select id="rx-patient" value={form.patient} onChange={(e) => setField('patient', e.target.value)}>
-                <option value="">Select patient</option>
-                {PATIENTS.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
-              {errors.patient && <span className="field-error">{errors.patient}</span>}
+              {isEdit ? (
+                <input id="rx-patient" value={form.patientLabel} disabled />
+              ) : (
+                <select id="rx-patient" value={form.patientId} onChange={(e) => setField('patientId', e.target.value)}>
+                  <option value="">Select patient</option>
+                  {patients.map((p) => <option key={p.patientId} value={p.patientId}>{p.name} ({p.patientId})</option>)}
+                </select>
+              )}
+              {errors.patientId && <span className="field-error">{errors.patientId}</span>}
             </div>
             <div className={`form-field ${errors.diagnosis ? 'has-error' : ''}`}>
               <label htmlFor="rx-diag">Diagnosis *</label>
@@ -181,44 +149,87 @@ const RxModal = ({ rx, onClose, onSave }) => {
 };
 
 const Prescriptions = () => {
-  const { role, canEdit } = useAuth();
+  const { role } = useAuth();
+  const { payload, clearPayload } = useNavigation();
   const isDoctor = role === 'doctor';
   const isPharmacist = role === 'pharmacist';
-  const isAdmin = role === 'admin';
 
-  const [rxList, setRxList] = useState(INITIAL_RX);
-  const [search, setSearch] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const { data: rxData, loading, error, refetch } = useApiResource(() => prescriptionService.getAll());
+  // Only doctors ever open the "new prescription" patient picker — avoid an
+  // unnecessary (and, for pharmacist/admin, permission-denied) patients fetch otherwise.
+  const { data: patientData } = useApiResource(() => (isDoctor ? patientService.getAll() : Promise.resolve([])), [isDoctor]);
   const [modal, setModal] = useState(null);
   const { toast, showToast } = useToast();
 
-  // Doctor sees own prescriptions only
-  const baseList = isDoctor
-    ? rxList.filter(rx => rx.doctor === 'Dr. Fatima Noor')
-    : rxList;
+  const rxList = rxData || [];
+  const patients = patientData || [];
+  const doctorNames = [...new Set(rxList.map(rx => rx.doctor))];
 
-  const filtered = baseList.filter((rx) => {
-    const q = search.toLowerCase();
-    return (rx.patient.toLowerCase().includes(q) || rx.diagnosis.toLowerCase().includes(q)) &&
-           (!filterStatus || rx.status === filterStatus);
+  const {
+    filtered, search, setSearch, filterValues, setFilter, dateFrom, setDateFrom, dateTo, setDateTo, clearAll,
+  } = useTableFilters(rxList, {
+    searchFields: [(rx) => rx.patient, (rx) => rx.diagnosis],
+    filters: { status: (rx) => rx.status, doctor: (rx) => rx.doctor },
+    dateField: (rx) => new Date(rx.date).toISOString().split('T')[0],
   });
 
-  const handleSave = (form) => {
-    if (form.id) {
-      setRxList((prev) => prev.map((rx) => rx.id === form.id ? { ...rx, ...form } : rx));
-      showToast('Prescription updated.');
-    } else {
-      setRxList((prev) => [...prev, { ...form, id: `RX-${String(rxList.length + 1).padStart(3,'0')}`, doctor: 'Dr. Fatima Noor', date: '2026-07-03', status: 'pending' }]);
-      showToast('Prescription saved and signed.');
+  // Arriving here via Appointments' "Write Prescription" quick action pre-fills the patient.
+  useEffect(() => {
+    if (isDoctor && payload?.prefillPatientId) {
+      setModal({ type: 'new', data: { patientId: payload.prefillPatientId } });
+      clearPayload();
     }
-    setModal(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payload]);
+
+  const handleSave = async (form) => {
+    try {
+      if (form.id) {
+        await prescriptionService.update(form.id, { diagnosis: form.diagnosis, medications: form.medications, notes: form.notes });
+        showToast('Prescription updated.');
+      } else {
+        await prescriptionService.create({ patientId: form.patientId, diagnosis: form.diagnosis, medications: form.medications, notes: form.notes });
+        showToast('Prescription saved and signed.');
+      }
+      await refetch();
+      setModal(null);
+    } catch (err) {
+      showToast(err.message || 'Failed to save prescription.');
+    }
   };
 
-  const handleDispense = (rx) => {
-    setRxList((prev) => prev.map((r) => r.id === rx.id ? { ...r, status: 'dispensed' } : r));
-    showToast('Marked as dispensed.');
-    setModal(null);
+  const handleDispense = async (rx) => {
+    try {
+      const { warnings } = await prescriptionService.dispense(rx.rxId);
+      await refetch();
+      showToast('Marked as dispensed.');
+      if (warnings?.length) showToast(warnings.join(' '));
+      setModal(null);
+    } catch (err) {
+      showToast(err.message || 'Failed to dispense.');
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="rx-page" aria-busy="true" aria-label="Loading…">
+        {[1, 2, 3].map(n => (
+          <div key={n} className="skeleton-row">
+            <LoadingSkeleton variant="text" width="120px" />
+            <LoadingSkeleton variant="text" width="200px" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page-centered">
+        <EmptyState icon={ClipboardList} message={error} actionLabel="Retry" onAction={refetch} />
+      </div>
+    );
+  }
 
   return (
     <div className="rx-page">
@@ -243,17 +254,31 @@ const Prescriptions = () => {
         </div>
         <div className="filter-group">
           <ChevronDown size={14} className="filter-icon" />
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} aria-label="Filter by status">
+          <select value={filterValues.status} onChange={(e) => setFilter('status', e.target.value)} aria-label="Filter by status">
             <option value="">All Statuses</option>
             <option value="pending">Pending</option>
             <option value="dispensed">Dispensed</option>
           </select>
         </div>
+        {!isDoctor && (
+          <div className="filter-group">
+            <ChevronDown size={14} className="filter-icon" />
+            <select value={filterValues.doctor} onChange={(e) => setFilter('doctor', e.target.value)} aria-label="Filter by doctor">
+              <option value="">All Doctors</option>
+              {doctorNames.map((d) => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
+        )}
+        <div className="filter-group date-range-group">
+          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} aria-label="From date" />
+          <span className="text-muted">to</span>
+          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} aria-label="To date" />
+        </div>
       </div>
 
       <div className="table-container">
         {filtered.length === 0 ? (
-          <EmptyState icon={ClipboardList} message="No prescriptions found." actionLabel="Clear Filters" onAction={() => { setSearch(''); setFilterStatus(''); }} />
+          <EmptyState icon={ClipboardList} message="No prescriptions found." actionLabel="Clear Filters" onAction={clearAll} />
         ) : (
           <table className="data-table" aria-label="Prescriptions">
             <thead>
@@ -265,16 +290,16 @@ const Prescriptions = () => {
                 <th>Diagnosis</th>
                 <th>Medications</th>
                 <th>Status</th>
-                {(isDoctor || isPharmacist) && <th>Actions</th>}
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((rx) => (
-                <tr key={rx.id}>
-                  <td><span className="rx-id">{rx.id}</span></td>
+                <tr key={rx.rxId}>
+                  <td><span className="rx-id">{rx.rxId}</span></td>
                   <td className="cell-name">{rx.patient.split(' (')[0]}</td>
                   {!isDoctor && <td className="text-secondary">{rx.doctor}</td>}
-                  <td className="text-muted">{rx.date}</td>
+                  <td className="text-muted">{new Date(rx.date).toLocaleDateString('en-CA')}</td>
                   <td className="text-secondary">{rx.diagnosis}</td>
                   <td>
                     <div className="rx-med-list">
@@ -289,25 +314,26 @@ const Prescriptions = () => {
                       : <span className="badge badge--amber">Pending</span>
                     }
                   </td>
-                  {(isDoctor || isPharmacist) && (
-                    <td>
-                      <div className="action-btns">
-                        {isDoctor && rx.status !== 'dispensed' && (
-                          <button className="icon-btn" title="Edit prescription" onClick={() => setModal({ type: 'edit', data: rx })} aria-label="Edit prescription">
-                            <ClipboardList size={15} />
-                          </button>
-                        )}
-                        {isPharmacist && rx.status === 'pending' && (
-                          <button className="icon-btn icon-btn--success" title="Mark dispensed" onClick={() => setModal({ type: 'dispense', data: rx })} aria-label="Mark as dispensed">
-                            <CheckCircle2 size={15} />
-                          </button>
-                        )}
-                        {rx.status === 'dispensed' && (
-                          <span className="rx-locked" title="Locked after dispensing" aria-label="Locked"><Lock size={14} /></span>
-                        )}
-                      </div>
-                    </td>
-                  )}
+                  <td>
+                    <div className="action-btns">
+                      <button className="icon-btn" title="Download PDF" onClick={() => generatePrescriptionPdf(rx)} aria-label={`Download PDF for ${rx.rxId}`}>
+                        <Download size={15} />
+                      </button>
+                      {isDoctor && rx.status !== 'dispensed' && (
+                        <button className="icon-btn" title="Edit prescription" onClick={() => setModal({ type: 'edit', data: { id: rx.rxId, patientLabel: rx.patient, diagnosis: rx.diagnosis, notes: rx.notes, medications: rx.medications } })} aria-label="Edit prescription">
+                          <ClipboardList size={15} />
+                        </button>
+                      )}
+                      {isPharmacist && rx.status === 'pending' && (
+                        <button className="icon-btn icon-btn--success" title="Mark dispensed" onClick={() => setModal({ type: 'dispense', data: rx })} aria-label="Mark as dispensed">
+                          <CheckCircle2 size={15} />
+                        </button>
+                      )}
+                      {rx.status === 'dispensed' && (
+                        <span className="rx-locked" title="Locked after dispensing" aria-label="Locked"><Lock size={14} /></span>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -316,12 +342,12 @@ const Prescriptions = () => {
       </div>
 
       {(modal?.type === 'new' || modal?.type === 'edit') && (
-        <RxModal rx={modal.data} onClose={() => setModal(null)} onSave={handleSave} />
+        <RxModal rx={modal.data} patients={patients} onClose={() => setModal(null)} onSave={handleSave} />
       )}
       {modal?.type === 'dispense' && (
         <ConfirmModal
           title="Confirm Dispense"
-          message={`Mark ${modal.data.id} for ${modal.data.patient.split(' (')[0]} as dispensed? This cannot be undone.`}
+          message={`Mark ${modal.data.rxId} for ${modal.data.patient.split(' (')[0]} as dispensed? This cannot be undone.`}
           confirmLabel="Confirm Dispense"
           variant="secondary"
           onConfirm={() => handleDispense(modal.data)}

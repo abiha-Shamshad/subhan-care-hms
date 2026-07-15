@@ -1,37 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, X, FileText, Lock, User, Calendar } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import EmptyState from '../components/EmptyState';
+import LoadingSkeleton from '../components/LoadingSkeleton';
 import useToast from '../hooks/useToast';
+import useApiResource from '../hooks/useApiResource';
+import { patientService, medicalHistoryService } from '../services/api';
 import './MedicalHistory.css';
-
-const PATIENT_LIST = [
-  { id: 'PT-1001', name: 'Ahmed Khan' },
-  { id: 'PT-1002', name: 'Sara Malik' },
-  { id: 'PT-1003', name: 'Hassan Raza' },
-  { id: 'PT-1004', name: 'Maryam Iqbal' },
-];
-
-const INITIAL_HISTORY = {
-  'PT-1001': [
-    { id: 'MH-001', date: '2026-06-28', doctor: 'Dr. Fatima Noor', diagnosis: 'Hypertension', notes: 'Patient presented with mild chest tightness. ECG performed: normal sinus rhythm. Advised lifestyle changes and follow-up in 2 weeks.', timestamp: '2026-06-28T09:14:00' },
-    { id: 'MH-002', date: '2026-03-10', doctor: 'Dr. Usman Ali', diagnosis: 'Chronic Lower Back Pain', notes: 'Reviewed chronic back pain. Prescribed physiotherapy sessions and muscle relaxants. Avoid heavy lifting.', timestamp: '2026-03-10T11:32:00' },
-  ],
-  'PT-1002': [
-    { id: 'MH-003', date: '2026-07-01', doctor: 'Dr. Usman Ali', diagnosis: 'Ankle Fracture Recovery', notes: 'Post-op review of ankle fracture. Healing is on track. Cast removed. Referred to physical therapy for range of motion exercises.', timestamp: '2026-07-01T10:05:00' },
-  ],
-  'PT-1003': [],
-  'PT-1004': [
-    { id: 'MH-004', date: '2026-06-15', doctor: 'Dr. Sana Riaz', diagnosis: 'Routine Gynaecological Checkup', notes: 'Annual examination completed. All parameters within normal limits. Next checkup in 12 months.', timestamp: '2026-06-15T14:20:00' },
-  ],
-};
 
 const MedicalHistory = () => {
   const { role } = useAuth();
-  const isDoctor = role === 'doctor';
-  const canAppend = isDoctor; // Only doctors can add entries
+  const canAppend = role === 'doctor'; // Only doctors can add entries
 
-  const [history, setHistory] = useState(INITIAL_HISTORY);
+  const { data: patientData, loading: patientsLoading, error: patientsError, refetch: refetchPatients } = useApiResource(() => patientService.getAll());
+  const patients = patientData || [];
+
   const [selectedPatientId, setSelectedPatientId] = useState(null);
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState(false);
@@ -39,39 +22,72 @@ const MedicalHistory = () => {
   const [errors, setErrors] = useState({});
   const { toast, showToast } = useToast();
 
-  const filteredPatients = PATIENT_LIST.filter((p) =>
+  const [entries, setEntries] = useState([]);
+  const [entriesLoading, setEntriesLoading] = useState(false);
+
+  const loadEntries = useCallback(async (patientId) => {
+    if (!patientId) return;
+    setEntriesLoading(true);
+    try {
+      const data = await medicalHistoryService.getByPatient(patientId);
+      setEntries(data);
+    } catch {
+      setEntries([]);
+    } finally {
+      setEntriesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadEntries(selectedPatientId);
+  }, [selectedPatientId, loadEntries]);
+
+  const filteredPatients = patients.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.id.toLowerCase().includes(search.toLowerCase())
+    p.patientId.toLowerCase().includes(search.toLowerCase())
   );
 
-  const selectedPatient = PATIENT_LIST.find((p) => p.id === selectedPatientId);
-  const entries = selectedPatientId ? (history[selectedPatientId] || []) : [];
+  const selectedPatient = patients.find((p) => p.patientId === selectedPatientId);
 
-  const handleAddEntry = (e) => {
+  const handleAddEntry = async (e) => {
     e.preventDefault();
     const errs = {};
     if (!newEntry.diagnosis.trim()) errs.diagnosis = 'Diagnosis is required';
     if (!newEntry.notes.trim()) errs.notes = 'Clinical notes are required';
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
-    const entry = {
-      id: `MH-${Date.now()}`,
-      date: '2026-07-03',
-      doctor: 'Dr. Fatima Noor', // ponytail: mock own doctor
-      diagnosis: newEntry.diagnosis,
-      notes: newEntry.notes,
-      timestamp: new Date().toISOString(),
-    };
-
-    setHistory((prev) => ({
-      ...prev,
-      [selectedPatientId]: [entry, ...(prev[selectedPatientId] || [])],
-    }));
-    setNewEntry({ diagnosis: '', notes: '' });
-    setErrors({});
-    setModal(false);
-    showToast('History entry appended and locked.');
+    try {
+      await medicalHistoryService.create(selectedPatientId, newEntry);
+      await loadEntries(selectedPatientId);
+      setNewEntry({ diagnosis: '', notes: '' });
+      setErrors({});
+      setModal(false);
+      showToast('History entry appended and locked.');
+    } catch (err) {
+      showToast(err.message || 'Failed to save entry.');
+    }
   };
+
+  if (patientsLoading) {
+    return (
+      <div className="mh-page" aria-busy="true" aria-label="Loading…">
+        {[1, 2, 3].map(n => (
+          <div key={n} className="skeleton-row">
+            <LoadingSkeleton variant="text" width="120px" />
+            <LoadingSkeleton variant="text" width="200px" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (patientsError) {
+    return (
+      <div className="page-centered">
+        <EmptyState icon={FileText} message={patientsError} actionLabel="Retry" onAction={refetchPatients} />
+      </div>
+    );
+  }
 
   return (
     <div className="mh-page">
@@ -91,23 +107,20 @@ const MedicalHistory = () => {
           />
         </div>
         <ul className="mh-patient-list">
-          {filteredPatients.map((p) => {
-            const count = (history[p.id] || []).length;
-            return (
-              <li key={p.id}>
-                <button
-                  className={`mh-patient-item ${selectedPatientId === p.id ? 'active' : ''}`}
-                  onClick={() => setSelectedPatientId(p.id)}
-                >
-                  <div className="mh-patient-avatar">{p.name.split(' ').map(w => w[0]).join('').slice(0,2)}</div>
-                  <div className="mh-patient-info">
-                    <span className="mh-patient-name">{p.name}</span>
-                    <span className="mh-patient-sub">{p.id} · {count} {count === 1 ? 'entry' : 'entries'}</span>
-                  </div>
-                </button>
-              </li>
-            );
-          })}
+          {filteredPatients.map((p) => (
+            <li key={p.patientId}>
+              <button
+                className={`mh-patient-item ${selectedPatientId === p.patientId ? 'active' : ''}`}
+                onClick={() => setSelectedPatientId(p.patientId)}
+              >
+                <div className="mh-patient-avatar">{p.name.split(' ').map(w => w[0]).join('').slice(0,2)}</div>
+                <div className="mh-patient-info">
+                  <span className="mh-patient-name">{p.name}</span>
+                  <span className="mh-patient-sub">{p.patientId}</span>
+                </div>
+              </button>
+            </li>
+          ))}
         </ul>
       </aside>
 
@@ -122,7 +135,7 @@ const MedicalHistory = () => {
             <div className="mh-main-header">
               <div>
                 <h2>{selectedPatient.name}</h2>
-                <p className="page-subtitle">{selectedPatient.id} · {entries.length} {entries.length === 1 ? 'entry' : 'entries'}</p>
+                <p className="page-subtitle">{selectedPatient.patientId} · {entries.length} {entries.length === 1 ? 'entry' : 'entries'}</p>
               </div>
               {canAppend && (
                 <button className="btn btn-primary" onClick={() => setModal(true)}>
@@ -136,25 +149,29 @@ const MedicalHistory = () => {
               Medical history entries are <strong>audit-critical and immutable</strong>. No editing or deletion is permitted for any role.
             </div>
 
-            {entries.length === 0 ? (
+            {entriesLoading ? (
+              <div aria-busy="true" aria-label="Loading…">
+                {[1, 2].map(n => <LoadingSkeleton key={n} variant="text" width="100%" />)}
+              </div>
+            ) : entries.length === 0 ? (
               <EmptyState icon={FileText} message="No medical history entries for this patient yet." />
             ) : (
               <div className="mh-timeline">
                 {entries.map((entry) => (
-                  <div key={entry.id} className="mh-entry">
+                  <div key={entry.entryId} className="mh-entry">
                     <div className="mh-entry-dot" aria-hidden="true" />
                     <div className="mh-entry-card">
                       <div className="mh-entry-header">
                         <div className="mh-entry-meta">
                           <span className="mh-entry-diagnosis">{entry.diagnosis}</span>
-                          <span className="mh-entry-id text-muted">{entry.id}</span>
+                          <span className="mh-entry-id text-muted">{entry.entryId}</span>
                         </div>
                         <span className="mh-lock-badge" title="Immutable entry"><Lock size={12} /> Locked</span>
                       </div>
                       <p className="mh-entry-notes">{entry.notes}</p>
                       <div className="mh-entry-footer">
                         <span><User size={12} /> {entry.doctor}</span>
-                        <span><Calendar size={12} /> {entry.date}</span>
+                        <span><Calendar size={12} /> {new Date(entry.date).toLocaleDateString('en-CA')}</span>
                         <span className="text-muted">Recorded: {new Date(entry.timestamp).toLocaleString('en-GB')}</span>
                       </div>
                     </div>

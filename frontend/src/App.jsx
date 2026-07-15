@@ -17,6 +17,7 @@ import MedicalHistory from './pages/MedicalHistory';
 import Billing from './pages/Billing';
 import Inventory from './pages/Inventory';
 import AuditLogs from './pages/AuditLogs';
+import Reports from './pages/Reports';
 import EmptyState from './components/EmptyState';
 import { BarChart3 } from 'lucide-react';
 
@@ -45,6 +46,7 @@ const PAGE_COMPONENTS = {
   billing:          Billing,
   inventory:        Inventory,
   'audit-logs':     AuditLogs,
+  reports:          Reports,
 };
 
 const ROLE_DASHBOARD = {
@@ -97,7 +99,8 @@ function AppContent() {
 }
 
 function AppGate() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+  if (isLoading) return null;
   return isAuthenticated ? <AppContent /> : <AuthScreen />;
 }
 
