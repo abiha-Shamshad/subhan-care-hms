@@ -1,4 +1,11 @@
+import dns from 'dns';
 import mongoose from 'mongoose';
+
+// Some routers/ISP DNS forwarders mishandle SRV record queries (used by
+// mongodb+srv:// URIs) even though normal A/AAAA lookups work fine through
+// them. Falling back to public resolvers avoids spurious connection failures
+// that have nothing to do with Atlas or this app.
+dns.setServers(['8.8.8.8', '1.1.1.1']);
 
 export const connectDB = async () => {
   const uri = process.env.MONGO_URI;

@@ -1,92 +1,35 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, UserPlus, FileText, AlertTriangle, ArrowLeft, Plus, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import EmptyState from '../components/EmptyState';
+import LoadingSkeleton from '../components/LoadingSkeleton';
 import ConfirmModal from '../components/ConfirmModal';
 import useToast from '../hooks/useToast';
+import useApiResource from '../hooks/useApiResource';
+import { patientService } from '../services/api';
 import './Patients.css';
 
 const PAGE_SIZE = 6;
 
-// Initial Mock Patients Database
-const INITIAL_PATIENTS = [
-  {
-    id: 'PT-1001',
-    name: 'Ahmed Khan',
-    dob: '1985-05-12',
-    age: 41,
-    gender: 'Male',
-    phone: '0300-1234567',
-    cnic: '42101-1234567-1',
-    address: 'Flat 402, Block C, Gulshan-e-Iqbal, Karachi',
-    emergencyContact: 'Sara Khan (Wife) - 0300-9876543',
-    lastVisit: '2026-06-28',
-    registrationDate: '2026-01-15',
-    medicalHistory: [
-      { id: 1, date: '2026-06-28', doctor: 'Dr. Fatima Noor', note: 'Patient presented with mild chest tightness. ECG performed: normal sinus rhythm. Advised lifestyle changes and follow-up in 2 weeks.' },
-      { id: 2, date: '2026-03-10', doctor: 'Dr. Usman Ali', note: 'Reviewed chronic back pain. Prescribed physiotherapy sessions and muscle relaxants. Avoid heavy lifting.' }
-    ],
-    appointments: [
-      { id: 101, date: '2026-07-02', time: '09:00 AM', doctor: 'Dr. Fatima Noor', status: 'confirmed' },
-      { id: 102, date: '2026-07-15', time: '11:00 AM', doctor: 'Dr. Usman Ali', status: 'pending' }
-    ],
-    prescriptions: [
-      { id: 201, date: '2026-06-28', doctor: 'Dr. Fatima Noor', medications: ['Aspirin 75mg - Once daily', 'Atorvastatin 10mg - At night'] }
-    ]
-  },
-  {
-    id: 'PT-1002',
-    name: 'Sara Malik',
-    dob: '1992-08-23',
-    age: 33,
-    gender: 'Female',
-    phone: '0321-7654321',
-    cnic: '42201-9876543-2',
-    address: 'House 42, Street 5, DHA Phase 6, Karachi',
-    emergencyContact: 'Tariq Malik (Husband) - 0321-1122334',
-    lastVisit: '2026-07-01',
-    registrationDate: '2026-02-20',
-    medicalHistory: [
-      { id: 1, date: '2026-07-01', doctor: 'Dr. Usman Ali', note: 'Post-op review of ankle fracture. Healing is on track. Cast removed. Referred to physical therapy for range of motion exercises.' }
-    ],
-    appointments: [
-      { id: 103, date: '2026-07-02', time: '09:30 AM', doctor: 'Dr. Usman Ali', status: 'confirmed' }
-    ],
-    prescriptions: [
-      { id: 202, date: '2026-07-01', doctor: 'Dr. Usman Ali', medications: ['Ibuprofen 400mg - Twice daily as needed'] }
-    ]
-  },
-  {
-    id: 'PT-1003',
-    name: 'Hassan Raza',
-    dob: '1978-11-04',
-    age: 47,
-    gender: 'Male',
-    phone: '0333-5556667',
-    cnic: '42301-5555555-5',
-    address: 'Apartment B-12, Askari 4, Karachi',
-    emergencyContact: 'Zubair Raza (Brother) - 0333-9998887',
-    lastVisit: '2026-06-15',
-    registrationDate: '2026-03-01',
-    medicalHistory: [],
-    appointments: [
-      { id: 104, date: '2026-07-02', time: '10:00 AM', doctor: 'Dr. Ayesha Tariq', status: 'pending' }
-    ],
-    prescriptions: []
-  },
-  { id: 'PT-1004', name: 'Zainab Bibi', dob: '1990-02-18', age: 36, gender: 'Female', phone: '0301-2223344', cnic: '42101-2223344-6', address: 'House 8, Gulberg III, Lahore', emergencyContact: 'Imran Ali (Brother) - 0301-5556677', lastVisit: '2026-06-20', registrationDate: '2026-03-12', medicalHistory: [], appointments: [], prescriptions: [] },
-  { id: 'PT-1005', name: 'Bilal Hussain', dob: '1983-09-30', age: 42, gender: 'Male', phone: '0302-3334455', cnic: '42101-3334455-7', address: 'Flat 12, Model Town, Lahore', emergencyContact: 'Ayesha Hussain (Wife) - 0302-8889900', lastVisit: '2026-06-25', registrationDate: '2026-03-18', medicalHistory: [], appointments: [], prescriptions: [] },
-  { id: 'PT-1006', name: 'Maryam Sheikh', dob: '1998-12-05', age: 27, gender: 'Female', phone: '0303-4445566', cnic: '42101-4445566-8', address: 'House 55, Bahria Town, Rawalpindi', emergencyContact: 'Kamran Sheikh (Father) - 0303-1112233', lastVisit: '2026-07-01', registrationDate: '2026-04-02', medicalHistory: [], appointments: [], prescriptions: [] },
-  { id: 'PT-1007', name: 'Ali Raza', dob: '1975-06-14', age: 51, gender: 'Male', phone: '0304-5556677', cnic: '42101-5556677-9', address: 'Apartment 3B, Clifton, Karachi', emergencyContact: 'Nadia Raza (Wife) - 0304-2223344', lastVisit: '2026-06-18', registrationDate: '2026-04-10', medicalHistory: [], appointments: [], prescriptions: [] },
-  { id: 'PT-1008', name: 'Nadia Perveen', dob: '1988-03-22', age: 38, gender: 'Female', phone: '0305-6667788', cnic: '42101-6667788-1', address: 'House 21, Johar Town, Lahore', emergencyContact: 'Faisal Perveen (Husband) - 0305-3334455', lastVisit: '2026-06-30', registrationDate: '2026-04-19', medicalHistory: [], appointments: [], prescriptions: [] },
-  { id: 'PT-1009', name: 'Usman Ghani', dob: '1995-07-09', age: 30, gender: 'Male', phone: '0306-7778899', cnic: '42101-7778899-2', address: 'Street 9, F-8, Islamabad', emergencyContact: 'Sana Ghani (Sister) - 0306-4445566', lastVisit: '2026-06-22', registrationDate: '2026-05-03', medicalHistory: [], appointments: [], prescriptions: [] },
-  { id: 'PT-1010', name: 'Fatima Zahra', dob: '2001-11-28', age: 24, gender: 'Female', phone: '0307-8889900', cnic: '42101-8889900-3', address: 'House 14, Wapda Town, Lahore', emergencyContact: 'Hassan Zahra (Father) - 0307-5556677', lastVisit: '2026-07-02', registrationDate: '2026-05-15', medicalHistory: [], appointments: [], prescriptions: [] },
-  { id: 'PT-1011', name: 'Kamran Shah', dob: '1970-04-03', age: 56, gender: 'Male', phone: '0308-9990011', cnic: '42101-9990011-4', address: 'Bungalow 7, Cantt, Peshawar', emergencyContact: 'Rahat Shah (Son) - 0308-6667788', lastVisit: '2026-06-12', registrationDate: '2026-05-22', medicalHistory: [], appointments: [], prescriptions: [] },
-  { id: 'PT-1012', name: 'Hina Saeed', dob: '1993-08-17', age: 32, gender: 'Female', phone: '0309-0001122', cnic: '42101-0001122-5', address: 'Flat 9C, Gulshan, Karachi', emergencyContact: 'Saeed Ahmed (Father) - 0309-7778899', lastVisit: '2026-06-29', registrationDate: '2026-06-01', medicalHistory: [], appointments: [], prescriptions: [] }
-];
+// Normalizes a real Patient document (backend field is `patientId`, no
+// embedded history/appointments/prescriptions) to the shape this page's
+// profile tabs expect, without touching every `.id` reference below.
+const normalizePatient = (p) => ({
+  ...p,
+  id: p.patientId,
+  medicalHistory: p.medicalHistory ?? [],
+  appointments: p.appointments ?? [],
+  prescriptions: p.prescriptions ?? [],
+});
 
 const Patients = () => {
-  const [patients, setPatients] = useState(INITIAL_PATIENTS);
+  const { data: patientsData, loading, error, refetch } = useApiResource(() => patientService.getAll());
+  const [patients, setPatients] = useState([]);
+
+  useEffect(() => {
+    if (patientsData) setPatients(patientsData.map(normalizePatient));
+  }, [patientsData]);
+
   const [activeView, setActiveView] = useState('list'); // 'list', 'register', 'profile'
   const [selectedPatientId, setSelectedPatientId] = useState(null);
   const [activeTab, setActiveTab] = useState('demographics'); // 'demographics', 'history', 'appointments', 'prescriptions'
@@ -206,7 +149,7 @@ const Patients = () => {
   };
 
   // Handle Registration Submit
-  const handleRegisterSubmit = (e) => {
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
@@ -221,33 +164,34 @@ const Patients = () => {
       return;
     }
 
-    const newId = `PT-${1000 + patients.length + 1}`;
-    const newPatient = {
-      id: newId,
-      ...regForm,
-      age: calculateAge(regForm.dob),
-      lastVisit: 'New Registration',
-      registrationDate: new Date().toISOString().split('T')[0],
-      medicalHistory: [],
-      appointments: [],
-      prescriptions: []
-    };
+    try {
+      const created = await patientService.create({
+        ...regForm,
+        age: calculateAge(regForm.dob),
+        lastVisit: 'New Registration',
+        registrationDate: new Date().toISOString().split('T')[0],
+      });
+      const newPatient = normalizePatient(created);
 
-    setPatients([newPatient, ...patients]);
-    setSelectedPatientId(newId);
-    setActiveView('profile');
-    setActiveTab('demographics');
-    // reset form
-    setRegForm({
-      name: '',
-      dob: '',
-      gender: 'Male',
-      phone: '',
-      cnic: '',
-      address: '',
-      emergencyContact: ''
-    });
-    setDuplicateWarning(false);
+      setPatients([newPatient, ...patients]);
+      setSelectedPatientId(newPatient.id);
+      setActiveView('profile');
+      setActiveTab('demographics');
+      // reset form
+      setRegForm({
+        name: '',
+        dob: '',
+        gender: 'Male',
+        phone: '',
+        cnic: '',
+        address: '',
+        emergencyContact: ''
+      });
+      setDuplicateWarning(false);
+      showToast(`Patient ${newPatient.name} registered.`);
+    } catch (err) {
+      showToast(err.message || 'Failed to register patient.');
+    }
   };
 
   // Add clinical medical note (Append-Only)
@@ -283,6 +227,27 @@ const Patients = () => {
 
   const canEditDemographics = isAdmin || isReceptionist;
   const canAppendClinicalHistory = isAdmin || isDoctor;
+
+  if (loading) {
+    return (
+      <div className="patients-page" aria-busy="true" aria-label="Loading…">
+        {[1, 2, 3].map((n) => (
+          <div key={n} className="skeleton-row">
+            <LoadingSkeleton variant="text" width="120px" />
+            <LoadingSkeleton variant="text" width="200px" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page-centered">
+        <EmptyState icon={Search} message={error} actionLabel="Retry" onAction={refetch} />
+      </div>
+    );
+  }
 
   return (
     <div className="patients-page">

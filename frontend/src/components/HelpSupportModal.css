@@ -1,0 +1,11 @@
+.hs-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.hs-row:last-of-type { border-bottom: none; }
+
+.hs-row-icon { color: var(--color-text-secondary); flex-shrink: 0; }

@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { NAVIGATION_ITEMS } from '../constants/navigation';
 import { useAuth } from '../context/AuthContext';
 import { HelpCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import HelpSupportModal from './HelpSupportModal';
 import './Sidebar.css';
 
 const Sidebar = ({ activePage = 'dashboard', isCollapsed, onToggle, onNavigate }) => {
   const { canView, role } = useAuth();
   const visibleItems = NAVIGATION_ITEMS.filter((item) => canView(item.id));
+  const [showHelp, setShowHelp] = useState(false);
 
   return (
     <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`} aria-label="Main Navigation">
@@ -51,6 +54,7 @@ const Sidebar = ({ activePage = 'dashboard', isCollapsed, onToggle, onNavigate }
           href="#"
           className="sidebar-link sidebar-link--footer"
           title={isCollapsed ? 'Help & Support' : undefined}
+          onClick={(e) => { e.preventDefault(); setShowHelp(true); }}
         >
           <HelpCircle size={20} aria-hidden="true" />
           {!isCollapsed && <span className="sidebar-link-text">Help & Support</span>}
@@ -64,6 +68,8 @@ const Sidebar = ({ activePage = 'dashboard', isCollapsed, onToggle, onNavigate }
           {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
       </div>
+
+      {showHelp && <HelpSupportModal onClose={() => setShowHelp(false)} />}
     </aside>
   );
 };

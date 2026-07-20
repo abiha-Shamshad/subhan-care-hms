@@ -1,32 +1,19 @@
-import { Bell, LogOut, Menu } from 'lucide-react';
-import { useAuth, ROLE_LABELS } from '../context/AuthContext';
+import { LogOut, Menu } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '../context/NavigationContext';
 import ThemeToggle from './ThemeToggle';
+import NotificationsMenu from './NotificationsMenu';
+import UserProfileCard from './UserProfileCard';
 import './Topbar.css';
 
-const getInitials = (name) =>
-  name
-    .replace(/^Dr\.?\s+/i, '')
-    .replace(/^Mr\.?\s+/i, '')
-    .replace(/^Ms\.?\s+/i, '')
-    .split(' ')
-    .map(w => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
-
 const Topbar = ({ onMenuToggle, activeTitle = 'Dashboard' }) => {
-  const { role, user, logout } = useAuth();
+  const { logout } = useAuth();
   const { navigate } = useNavigation();
 
   const handleLogout = () => {
     navigate('dashboard');
     logout();
   };
-
-  const initials = user?.name ? getInitials(user.name) : '--';
-  const displayName = user?.name ?? ROLE_LABELS[role] ?? 'User';
-  const displayRole = ROLE_LABELS[role] ?? '';
 
   return (
     <header className="topbar" aria-label="Top Bar">
@@ -67,20 +54,9 @@ const Topbar = ({ onMenuToggle, activeTitle = 'Dashboard' }) => {
 
         <ThemeToggle />
 
-        <button className="topbar-notification-btn" aria-label="Notifications, 3 unread">
-          <Bell size={20} aria-hidden="true" />
-          <span className="topbar-notification-badge" aria-hidden="true">3</span>
-        </button>
+        <NotificationsMenu />
 
-        <div className="topbar-user">
-          <div className="topbar-avatar" aria-hidden="true">
-            {initials}
-          </div>
-          <div className="topbar-user-info">
-            <span className="topbar-username">{displayName}</span>
-            <span className="topbar-role">{displayRole}</span>
-          </div>
-        </div>
+        <UserProfileCard />
 
         <button
           className="topbar-logout-btn"
