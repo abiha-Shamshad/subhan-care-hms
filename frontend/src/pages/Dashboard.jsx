@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Users, CalendarDays, Stethoscope, CreditCard, RefreshCw } from 'lucide-react';
+import { useNavigation } from '../context/NavigationContext';
 import KpiCard from '../components/KpiCard';
 import QuickActions from '../components/QuickActions';
 import AppointmentsWidget from '../components/AppointmentsWidget';
@@ -25,11 +26,11 @@ import './Dashboard.css';
 const Dashboard = () => {
   const [loading, setLoading] = useState(false);
   const [viewState, setViewState] = useState('loaded'); // 'loaded', 'loading', 'empty'
+  const { navigate } = useNavigation();
 
-  // Mock handlers for Quick Actions
-  const handleRegisterPatient = () => alert('Opening Register Patient modal...');
-  const handleAddAppointment = () => alert('Opening Add Appointment modal...');
-  const handleGenerateReport = () => alert('Generating HMS Administrative Report PDF...');
+  const handleRegisterPatient = () => navigate('patients', { openRegister: true });
+  const handleAddAppointment = () => navigate('appointments', { openBook: true });
+  const handleGenerateReport = () => navigate('reports');
 
   // Toggle layout simulator (simulates NFR-05 quick refresh / loaders)
   const handleRefresh = () => {

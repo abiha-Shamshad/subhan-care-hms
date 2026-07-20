@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   CalendarDays, Plus, Search, ChevronDown, X, Clock,
   CheckCircle2, XCircle, AlertCircle, LayoutList, LayoutGrid, CalendarClock, ClipboardList
@@ -233,7 +233,7 @@ const CalendarView = ({ appts, canBook, onBook }) => {
 
 const Appointments = () => {
   const { role } = useAuth();
-  const { navigate } = useNavigation();
+  const { navigate, payload, clearPayload } = useNavigation();
   const isDoctor = role === 'doctor';
 
   const { data: appts, loading, error, refetch } = useApiResource(() => appointmentService.getAll());
@@ -245,6 +245,15 @@ const Appointments = () => {
   const [view, setView] = useState('list');
   const [modal, setModal] = useState(null);
   const { toast, showToast } = useToast();
+
+  // Arriving here via the Dashboard's "Add Appointment" quick action.
+  useEffect(() => {
+    if (payload?.openBook && !isDoctor) {
+      setModal({ type: 'book' });
+      clearPayload();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payload]);
 
   const allAppts = appts || [];
   const doctors = doctorList || [];

@@ -6,6 +6,7 @@ import LoadingSkeleton from '../components/LoadingSkeleton';
 import ConfirmModal from '../components/ConfirmModal';
 import useToast from '../hooks/useToast';
 import useApiResource from '../hooks/useApiResource';
+import { useNavigation } from '../context/NavigationContext';
 import { patientService } from '../services/api';
 import './Patients.css';
 
@@ -57,6 +58,23 @@ const Patients = () => {
   const [validationErrors, setValidationErrors] = useState({});
   const [duplicateWarning, setDuplicateWarning] = useState(false);
   const [historyNote, setHistoryNote] = useState('');
+
+  const openRegisterForm = () => {
+    setActiveView('register');
+    setRegForm({ name: '', dob: '', gender: 'Male', phone: '', cnic: '', address: '', emergencyContact: '' });
+    setValidationErrors({});
+    setDuplicateWarning(false);
+  };
+
+  // Arriving here via the Dashboard's "Register Patient" quick action.
+  const { payload, clearPayload } = useNavigation();
+  useEffect(() => {
+    if (payload?.openRegister) {
+      openRegisterForm();
+      clearPayload();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payload]);
 
   const activePatient = patients.find(p => p.id === selectedPatientId);
 
@@ -312,23 +330,7 @@ const Patients = () => {
             </div>
 
             {canEditDemographics && (
-              <button
-                className="action-btn action-btn-primary"
-                onClick={() => {
-                  setActiveView('register');
-                  setRegForm({
-                    name: '',
-                    dob: '',
-                    gender: 'Male',
-                    phone: '',
-                    cnic: '',
-                    address: '',
-                    emergencyContact: ''
-                  });
-                  setValidationErrors({});
-                  setDuplicateWarning(false);
-                }}
-              >
+              <button className="action-btn action-btn-primary" onClick={openRegisterForm}>
                 <UserPlus size={18} />
                 <span>Register New Patient</span>
               </button>
