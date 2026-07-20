@@ -2,6 +2,7 @@ import './StatusBadge.css';
 
 const STATUS_CONFIG = {
   confirmed: { label: 'Confirmed', className: 'status-badge--success' },
+  completed: { label: 'Completed', className: 'status-badge--success' },
   active: { label: 'Active', className: 'status-badge--success' },
   pending: { label: 'Pending', className: 'status-badge--warning' },
   cancelled: { label: 'Cancelled', className: 'status-badge--danger' },

@@ -277,23 +277,37 @@ const Appointments = () => {
   const handleAdvanceStatus = async (appt) => {
     const next = STATUS_META[appt.status]?.next;
     if (!next) return;
-    await appointmentService.update(appt.apptId, { status: next });
-    await refetch();
-    showToast(`Marked as ${next}.`);
+    try {
+      await appointmentService.update(appt.apptId, { status: next });
+      await refetch();
+      showToast(`Marked as ${next}.`);
+    } catch (err) {
+      showToast(err.message || 'Failed to update appointment status.');
+    }
   };
 
   const handleCancel = async (appt) => {
-    await appointmentService.update(appt.apptId, { status: 'cancelled' });
-    await refetch();
-    showToast('Appointment cancelled.');
-    setModal(null);
+    try {
+      await appointmentService.update(appt.apptId, { status: 'cancelled' });
+      await refetch();
+      showToast('Appointment cancelled.');
+    } catch (err) {
+      showToast(err.message || 'Failed to cancel appointment.');
+    } finally {
+      setModal(null);
+    }
   };
 
   const handleReschedule = async (updated) => {
-    await appointmentService.update(updated.apptId, { date: updated.date, time: updated.time, status: updated.status });
-    await refetch();
-    showToast('Appointment rescheduled.');
-    setModal(null);
+    try {
+      await appointmentService.update(updated.apptId, { date: updated.date, time: updated.time, status: updated.status });
+      await refetch();
+      showToast('Appointment rescheduled.');
+    } catch (err) {
+      showToast(err.message || 'Failed to reschedule appointment.');
+    } finally {
+      setModal(null);
+    }
   };
 
   const todayStr = new Date().toISOString().split('T')[0];
@@ -417,7 +431,7 @@ const Appointments = () => {
                           <div className="text-muted">{a.time}</div>
                         </td>
                         <td><span className="appt-type-tag">{a.type}</span></td>
-                        <td><StatusBadge status={a.status} label={meta.label} /></td>
+                        <td><StatusBadge status={a.status} customLabel={meta.label} /></td>
                         <td>
                           <div className="action-btns">
                             {isDoctor ? (

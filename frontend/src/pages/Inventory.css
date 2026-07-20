@@ -21,3 +21,17 @@
 
 .tr--danger  { background: rgba(239, 68, 68, 0.02); }
 .tr--warning { background: rgba(245, 158, 11, 0.02); }
+
+/* ── Responsive ───────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .inventory-page { gap: var(--spacing-md); }
+}
+
+@media (max-width: 768px) {
+  .inventory-page .table-container { overflow-x: auto; }
+  .inventory-page .data-table { min-width: 720px; }
+}
+
+@media (max-width: 480px) {
+  .item-id { font-size: 11px; padding: 2px 6px; }
+}

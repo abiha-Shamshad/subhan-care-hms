@@ -211,3 +211,14 @@
   right: 20px;
   top: -11px;
 }
+
+/* ── Responsive ───────────────────────────────────── */
+@media (max-width: 1024px) {
+  .sidebar-brand-text h2 { font-size: 14px; }
+}
+
+@media (max-width: 480px) {
+  /* Mobile drawer: cap width so a sliver of the page stays visible behind it */
+  .sidebar { width: min(var(--sidebar-width), 84vw); }
+  .sidebar-link { font-size: 13px; }
+}

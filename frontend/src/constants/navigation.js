@@ -13,6 +13,7 @@ import {
   Package,
   BarChart3,
   ScrollText,
+  Settings,
 } from 'lucide-react';
 
 export const NAVIGATION_ITEMS = [
@@ -96,5 +97,12 @@ export const NAVIGATION_ITEMS = [
     icon: ScrollText,
     path: '/audit-logs',
     roles: ['admin'],
+  },
+  {
+    id: 'settings',
+    label: 'Settings',
+    icon: Settings,
+    path: '/settings',
+    roles: ['admin', 'doctor', 'receptionist', 'pharmacist', 'billing'],
   },
 ];

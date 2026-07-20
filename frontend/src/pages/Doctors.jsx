@@ -231,7 +231,7 @@ const Doctors = () => {
                   <td className="text-secondary">{doc.qualification}</td>
                   <td className="text-secondary">{doc.schedule}</td>
                   <td><span className="patient-count"><Users size={13} /> {doc.patients}</span></td>
-                  <td><StatusBadge status={doc.status === 'active' ? 'confirmed' : 'cancelled'} label={doc.status === 'active' ? 'Active' : 'On Leave'} /></td>
+                  <td><StatusBadge status={doc.status === 'active' ? 'confirmed' : 'cancelled'} customLabel={doc.status === 'active' ? 'Active' : 'On Leave'} /></td>
                   {isAdmin && (
                     <td>
                       <div className="action-btns">

@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
-import { PERMISSIONS } from '../config/permissions.js';
+import { PERMISSIONS, ROLES } from '../config/permissions.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 const OTP_TTL_MS = 10 * 60 * 1000;
@@ -91,4 +91,26 @@ export const me = asyncHandler(async (req, res) => {
 
 export const permissions = asyncHandler(async (req, res) => {
   res.json({ role: req.user.role, permissions: PERMISSIONS[req.user.role] || {} });
+});
+
+export const changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const user = await User.findById(req.user.id);
+  if (!user) return res.status(404).json({ message: 'User not found' });
+
+  if (!(await bcrypt.compare(currentPassword || '', user.passwordHash))) {
+    return res.status(401).json({ message: 'Current password is incorrect.' });
+  }
+  if (!newPassword || newPassword.length < 6) {
+    return res.status(400).json({ message: 'New password must be at least 6 characters.' });
+  }
+
+  user.passwordHash = await bcrypt.hash(newPassword, 10);
+  await user.save();
+
+  res.json({ message: 'Password updated successfully.' });
+});
+
+export const permissionsMatrix = asyncHandler(async (req, res) => {
+  res.json({ roles: ROLES, permissions: PERMISSIONS });
 });

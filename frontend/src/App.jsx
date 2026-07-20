@@ -18,8 +18,10 @@ import Billing from './pages/Billing';
 import Inventory from './pages/Inventory';
 import AuditLogs from './pages/AuditLogs';
 import Reports from './pages/Reports';
+import Settings from './pages/Settings';
 import EmptyState from './components/EmptyState';
-import { BarChart3 } from 'lucide-react';
+import ErrorBoundary from './components/ErrorBoundary';
+import { BarChart3, Lock } from 'lucide-react';
 
 const PAGE_TITLES = {
   dashboard:        'Administrative Overview',
@@ -33,6 +35,7 @@ const PAGE_TITLES = {
   inventory:        'Inventory Management',
   reports:          'Reports & Analytics',
   'audit-logs':     'Audit Logs',
+  settings:         'Settings',
 };
 
 const PAGE_COMPONENTS = {
@@ -47,6 +50,7 @@ const PAGE_COMPONENTS = {
   inventory:        Inventory,
   'audit-logs':     AuditLogs,
   reports:          Reports,
+  settings:         Settings,
 };
 
 const ROLE_DASHBOARD = {
@@ -65,7 +69,7 @@ const ROLE_DASHBOARD_TITLE = {
 
 function AppContent() {
   const { currentPage, navigate } = useNavigation();
-  const { role } = useAuth();
+  const { role, canView } = useAuth();
 
   const isDashboard = currentPage === 'dashboard';
   const PageComponent = isDashboard
@@ -76,13 +80,27 @@ function AppContent() {
     ? (ROLE_DASHBOARD_TITLE[role] ?? PAGE_TITLES.dashboard)
     : PAGE_TITLES[currentPage] ?? `${currentPage} Module`;
 
+  // Sidebar only ever links to pages the role can view, but currentPage can
+  // also be reached via navigate() calls elsewhere — re-check here so a
+  // restricted page never renders just because a link to it exists somewhere.
+  const isRestricted = !isDashboard && PageComponent && !canView(currentPage);
+
   return (
     <DashboardLayout
       activePage={currentPage}
       activeTitle={activeTitle}
       onNavigate={navigate}
     >
-      {PageComponent ? (
+      {isRestricted ? (
+        <div className="page-centered">
+          <EmptyState
+            icon={Lock}
+            message="You do not have permission to view this page."
+            actionLabel="Return to Dashboard"
+            onAction={() => navigate('dashboard')}
+          />
+        </div>
+      ) : PageComponent ? (
         <PageComponent />
       ) : (
         <div className="page-centered">
@@ -106,13 +124,15 @@ function AppGate() {
 
 function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <NavigationProvider>
-          <AppGate />
-        </NavigationProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <NavigationProvider>
+            <AppGate />
+          </NavigationProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

@@ -77,3 +77,19 @@
   padding: 2px 8px;
   border-radius: 4px;
 }
+
+/* ── Responsive ───────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .rx-page { padding: var(--spacing-md); }
+}
+
+@media (max-width: 768px) {
+  .rx-page .table-container { overflow-x: auto; }
+  .rx-page .data-table { min-width: 720px; }
+  .rx-meds-header { flex-wrap: wrap; gap: 8px; }
+}
+
+@media (max-width: 480px) {
+  .rx-id { font-size: 11px; padding: 2px 6px; }
+  .med-row-header { flex-wrap: wrap; }
+}

@@ -199,7 +199,7 @@ const Staff = () => {
                   <td className="text-secondary">{member.department}</td>
                   <td className="text-secondary">{member.phone}</td>
                   <td className="text-muted">{member.lastLogin}</td>
-                  <td><StatusBadge status={member.status === 'active' ? 'confirmed' : 'cancelled'} label={member.status === 'active' ? 'Active' : 'Inactive'} /></td>
+                  <td><StatusBadge status={member.status === 'active' ? 'confirmed' : 'cancelled'} customLabel={member.status === 'active' ? 'Active' : 'Inactive'} /></td>
                   <td>
                     <div className="action-btns">
                       <button className="icon-btn" title="Edit" onClick={() => setModal({ type: 'edit', data: member })} aria-label={`Edit ${member.name}`}><Edit2 size={15} /></button>

@@ -57,6 +57,9 @@ export const authService = {
                             api.post('/auth/reset-password', { email, password, token }),
   me:                    () => api.get('/auth/me'),
   permissions:           () => api.get('/auth/permissions'),
+  changePassword:        (currentPassword, newPassword) =>
+                            api.patch('/auth/change-password', { currentPassword, newPassword }),
+  permissionsMatrix:     () => api.get('/auth/permissions-matrix'),
 };
 
 export const patientService = {

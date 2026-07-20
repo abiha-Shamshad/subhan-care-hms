@@ -292,7 +292,7 @@ const Inventory = () => {
                     <td className="text-secondary">{item.reorderLevel}</td>
                     <td className="text-secondary">Rs. {item.rate}</td>
                     <td className="text-muted">{item.expiry || '—'}</td>
-                    <td><StatusBadge status={meta.badgeStatus} label={meta.label} /></td>
+                    <td><StatusBadge status={meta.badgeStatus} customLabel={meta.label} /></td>
                     {canManage && (
                       <td>
                         <div className="action-btns">
