@@ -12,3 +12,4 @@ backend/npm-debug.log*
 # Frontend (frontend/.gitignore also covers this, kept here for safety with root-level tooling)
 frontend/node_modules
 frontend/dist
+frontend/.env

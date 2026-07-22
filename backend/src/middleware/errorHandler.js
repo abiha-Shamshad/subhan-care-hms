@@ -3,7 +3,12 @@ export const notFound = (req, res) => {
 };
 
 export const errorHandler = (err, req, res, next) => {
-  console.error(err);
+  // ponytail: full stack can contain connection strings (MongoError) — only in dev
+  if (process.env.NODE_ENV !== 'production') {
+    console.error(err);
+  } else {
+    console.error(err.name, err.message);
+  }
 
   if (err.name === 'ValidationError') {
     return res.status(400).json({ message: Object.values(err.errors).map((e) => e.message).join(', ') });
@@ -17,5 +22,7 @@ export const errorHandler = (err, req, res, next) => {
   }
 
   const status = err.status || 500;
-  res.status(status).json({ message: err.message || 'Internal server error' });
+  // ponytail: never echo raw err.message on 500 — could leak internals
+  const safeMessage = status < 500 ? (err.message || 'Request error') : 'Internal server error';
+  res.status(status).json({ message: safeMessage });
 };

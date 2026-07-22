@@ -98,15 +98,24 @@ const Patients = () => {
   const pagedPatients = filteredPatients.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   const goToPage = (page) => setCurrentPage(Math.min(Math.max(1, page), totalPages));
 
-  // Delete a patient record (admin only) — confirmed via ConfirmModal
-  const handleDeletePatient = (patient) => {
-    setPatients((prev) => prev.filter((p) => p.id !== patient.id));
-    setModal(null);
-    if (selectedPatientId === patient.id) {
-      setSelectedPatientId(null);
-      setActiveView('list');
+  // Delete a patient record (admin only) — confirmed via ConfirmModal.
+  // Calls the backend, which anonymizes the record rather than removing it
+  // outright (invoices/appointments/prescriptions keep a name snapshot for
+  // billing and audit history, so the row itself has to stay referenceable).
+  const handleDeletePatient = async (patient) => {
+    try {
+      await patientService.delete(patient.id);
+      setPatients((prev) => prev.filter((p) => p.id !== patient.id));
+      setModal(null);
+      if (selectedPatientId === patient.id) {
+        setSelectedPatientId(null);
+        setActiveView('list');
+      }
+      showToast(`Patient ${patient.name} deleted.`);
+    } catch (err) {
+      setModal(null);
+      showToast(err.message || 'Failed to delete patient.');
     }
-    showToast(`Patient ${patient.name} deleted.`);
   };
 
   // Calculate age helper

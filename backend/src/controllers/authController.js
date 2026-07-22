@@ -38,8 +38,12 @@ export const forgotPassword = asyncHandler(async (req, res) => {
     user.resetOtpHash = await bcrypt.hash(otp, 10);
     user.resetOtpExpires = new Date(Date.now() + OTP_TTL_MS);
     await user.save();
-    // No email provider configured — logged for local/dev testing.
-    console.log(`[password reset] OTP for ${user.email}: ${otp}`);
+    // ponytail: no email provider yet — log OTP only in local dev, and never the
+    // account email alongside it. Checking `=== 'development'` (not `!== 'production'`)
+    // means a missing/misconfigured NODE_ENV fails closed instead of leaking OTPs.
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[password reset] OTP generated: ${otp}`);
+    }
   }
 
   // Always respond the same way so we don't leak which emails exist.

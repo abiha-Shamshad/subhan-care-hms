@@ -13,6 +13,7 @@ const patientSchema = new mongoose.Schema(
     emergencyContact: { type: String, default: '' },
     lastVisit: { type: String, default: '' },
     registrationDate: { type: String, default: '' },
+    deletedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
