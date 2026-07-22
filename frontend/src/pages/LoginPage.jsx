@@ -170,42 +170,48 @@ const LoginPage = ({ onForgotPassword }) => {
         </button>
       </form>
 
-      <div className="lp-divider" aria-hidden="true">
-        <span>demo credentials</span>
-      </div>
+      {/* import.meta.env.DEV is false in any production Vite build, so this
+          panel — and the working demo passwords in DEMO_CREDS — never ships live. */}
+      {import.meta.env.DEV && (
+        <>
+          <div className="lp-divider" aria-hidden="true">
+            <span>demo credentials</span>
+          </div>
 
-      <div className="lp-demo-section">
-        <button
-          className="lp-demo-toggle"
-          onClick={() => setShowDemo(d => !d)}
-          aria-expanded={showDemo}
-          aria-controls="lp-demo-list"
-        >
-          <span>Try a role</span>
-          {showDemo ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-        </button>
+          <div className="lp-demo-section">
+            <button
+              className="lp-demo-toggle"
+              onClick={() => setShowDemo(d => !d)}
+              aria-expanded={showDemo}
+              aria-controls="lp-demo-list"
+            >
+              <span>Try a role</span>
+              {showDemo ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
 
-        {showDemo && (
-          <ul id="lp-demo-list" className="lp-demo-list">
-            {DEMO_CREDS.map(cred => (
-              <li key={cred.role} className="lp-demo-card">
-                <div className="lp-demo-info">
-                  <span className="lp-demo-role">{ROLE_LABELS[cred.role]}</span>
-                  <span className="lp-demo-email">{cred.email}</span>
-                  <span className="lp-demo-pw">{cred.password}</span>
-                </div>
-                <button
-                  className="lp-demo-use-btn"
-                  onClick={() => applyDemoCredential(cred)}
-                  aria-label={`Use ${ROLE_LABELS[cred.role]} demo credentials`}
-                >
-                  Use
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+            {showDemo && (
+              <ul id="lp-demo-list" className="lp-demo-list">
+                {DEMO_CREDS.map(cred => (
+                  <li key={cred.role} className="lp-demo-card">
+                    <div className="lp-demo-info">
+                      <span className="lp-demo-role">{ROLE_LABELS[cred.role]}</span>
+                      <span className="lp-demo-email">{cred.email}</span>
+                      <span className="lp-demo-pw">{cred.password}</span>
+                    </div>
+                    <button
+                      className="lp-demo-use-btn"
+                      onClick={() => applyDemoCredential(cred)}
+                      aria-label={`Use ${ROLE_LABELS[cred.role]} demo credentials`}
+                    >
+                      Use
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </>
+      )}
 
       <p className="lp-form-footer">
         By logging into the Subhan Care application you are agreeing to the{' '}

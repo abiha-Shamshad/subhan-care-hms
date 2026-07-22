@@ -13,6 +13,11 @@ export const connectDB = async () => {
     throw new Error('MONGO_URI is not set. Copy backend/.env.example to backend/.env and fill it in.');
   }
   mongoose.set('strictQuery', true);
-  await mongoose.connect(uri);
+  // In production, require TLS explicitly rather than relying on `mongodb+srv://`
+  // implying it — if the URI is ever swapped for a plain `mongodb://` one, prod
+  // connections still refuse to go out unencrypted. Left off the default so a
+  // local non-TLS dev Mongo instance still works with `mongodb://localhost`.
+  const options = process.env.NODE_ENV === 'production' ? { tls: true } : {};
+  await mongoose.connect(uri, options);
   console.log(`MongoDB connected: ${mongoose.connection.host}/${mongoose.connection.name}`);
 };
