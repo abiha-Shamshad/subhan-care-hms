@@ -19,8 +19,16 @@ export const createDoctor = asyncHandler(async (req, res) => {
   res.status(201).json(doctor);
 });
 
+// Excludes doctorId/_id/timestamps.
+const DOCTOR_EDITABLE_FIELDS = ['name', 'specialty', 'qualification', 'phone', 'email', 'schedule', 'experience', 'patients', 'status'];
+
 export const updateDoctor = asyncHandler(async (req, res) => {
-  const doctor = await Doctor.findOneAndUpdate({ doctorId: req.params.id }, req.body, { new: true, runValidators: true });
+  const updates = {};
+  for (const field of DOCTOR_EDITABLE_FIELDS) {
+    if (field in req.body) updates[field] = req.body[field];
+  }
+
+  const doctor = await Doctor.findOneAndUpdate({ doctorId: req.params.id }, updates, { new: true, runValidators: true });
   if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
   res.json(doctor);
 });

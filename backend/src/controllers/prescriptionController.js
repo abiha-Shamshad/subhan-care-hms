@@ -4,21 +4,20 @@ import User from '../models/User.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { nextId } from '../utils/generateId.js';
 import { deductForMedications } from '../utils/matchInventory.js';
+import { safeSearchRegex } from '../utils/escapeRegex.js';
 
 const buildFilter = (query) => {
   const filter = {};
-  if (query.status) filter.status = query.status;
-  if (query.patientId) filter.patientId = query.patientId;
-  if (query.doctorId) filter.doctorId = query.doctorId;
+  if (typeof query.status === 'string') filter.status = query.status;
+  if (typeof query.patientId === 'string') filter.patientId = query.patientId;
+  if (typeof query.doctorId === 'string') filter.doctorId = query.doctorId;
   if (query.dateFrom || query.dateTo) {
     filter.date = {};
     if (query.dateFrom) filter.date.$gte = new Date(query.dateFrom);
     if (query.dateTo) filter.date.$lte = new Date(query.dateTo);
   }
-  if (query.q) {
-    const re = new RegExp(query.q, 'i');
-    filter.$or = [{ patient: re }, { diagnosis: re }];
-  }
+  const re = safeSearchRegex(query.q);
+  if (re) filter.$or = [{ patient: re }, { diagnosis: re }];
   return filter;
 };
 
@@ -66,6 +65,15 @@ export const updatePrescription = asyncHandler(async (req, res) => {
   const existing = await Prescription.findOne({ rxId: req.params.id });
   if (!existing) return res.status(404).json({ message: 'Prescription not found' });
   if (existing.status === 'dispensed') return res.status(409).json({ message: 'Dispensed prescriptions cannot be edited.' });
+
+  // Doctors may only edit prescriptions they authored, enforced server-side
+  // the same way getPrescriptions/createPrescription already scope by doctorId.
+  if (req.user.role === 'doctor') {
+    const author = await User.findById(req.user.id);
+    if (!author?.doctorId || String(existing.doctorId) !== String(author.doctorId)) {
+      return res.status(403).json({ message: 'You can only edit prescriptions you authored.' });
+    }
+  }
 
   const { diagnosis, medications, notes } = req.body;
   existing.diagnosis = diagnosis ?? existing.diagnosis;

@@ -1,13 +1,17 @@
 import mongoose from 'mongoose';
 
 const serviceLineSchema = new mongoose.Schema(
-  { name: { type: String, required: true }, qty: { type: Number, required: true }, rate: { type: Number, required: true } },
+  {
+    name: { type: String, required: true },
+    qty: { type: Number, required: true, min: 0.01 },
+    rate: { type: Number, required: true, min: 0 },
+  },
   { _id: false }
 );
 
 const paymentSchema = new mongoose.Schema(
   {
-    amount: { type: Number, required: true },
+    amount: { type: Number, required: true, min: 0.01 },
     method: { type: String, required: true },
     date: { type: Date, default: Date.now },
     recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
@@ -24,7 +28,7 @@ const invoiceSchema = new mongoose.Schema(
     date: { type: Date, required: true },
     dueDate: { type: Date, required: true },
     services: { type: [serviceLineSchema], required: true },
-    discount: { type: Number, default: 0 },
+    discount: { type: Number, default: 0, min: 0 },
     paid: { type: Number, default: 0 },
     payments: { type: [paymentSchema], default: [] },
     status: { type: String, enum: ['paid', 'partial', 'unpaid', 'overdue'], default: 'unpaid' },

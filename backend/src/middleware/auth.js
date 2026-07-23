@@ -1,14 +1,22 @@
 import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
 import { accessFor } from '../config/permissions.js';
 
-export const authenticate = (req, res, next) => {
+// Role/active-status are re-checked against the DB on every request rather than
+// trusted from the token payload, so a demotion or deactivation takes effect
+// immediately instead of only once the caller's existing JWT naturally expires.
+export const authenticate = async (req, res, next) => {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token) return res.status(401).json({ message: 'Authentication required' });
 
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = { id: payload.sub, role: payload.role };
+    const user = await User.findById(payload.sub).select('role isActive');
+    if (!user || !user.isActive) {
+      return res.status(401).json({ message: 'Invalid or expired token' });
+    }
+    req.user = { id: payload.sub, role: user.role };
     next();
   } catch {
     return res.status(401).json({ message: 'Invalid or expired token' });

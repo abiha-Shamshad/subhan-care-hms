@@ -32,8 +32,26 @@ export const createPatient = asyncHandler(async (req, res) => {
   res.status(201).json(patient);
 });
 
+// Fields a caller may edit directly. Excludes patientId/_id/timestamps and, in
+// particular, deletedAt: that field is only ever set by the admin-only
+// deletePatient anonymization flow, and must not be reachable through a
+// generic update (which receptionist/doctor roles also have write access to).
+const PATIENT_EDITABLE_FIELDS = [
+  'name', 'dob', 'age', 'gender', 'phone', 'cnic', 'address',
+  'emergencyContact', 'lastVisit', 'registrationDate',
+];
+
 export const updatePatient = asyncHandler(async (req, res) => {
-  const patient = await Patient.findOneAndUpdate({ patientId: req.params.id }, req.body, { new: true, runValidators: true });
+  const updates = {};
+  for (const field of PATIENT_EDITABLE_FIELDS) {
+    if (field in req.body) updates[field] = req.body[field];
+  }
+
+  const patient = await Patient.findOneAndUpdate(
+    { patientId: req.params.id, deletedAt: null },
+    updates,
+    { new: true, runValidators: true }
+  );
   if (!patient) return res.status(404).json({ message: 'Patient not found' });
   res.json(patient);
 });

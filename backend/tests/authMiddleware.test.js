@@ -1,9 +1,28 @@
 import express from 'express';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
-import { authenticate, authorize, requireFull, requireRole } from '../src/middleware/auth.js';
+import { jest } from '@jest/globals';
 
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret';
+
+// authenticate() re-checks the caller's role/active-status against the DB on every
+// request instead of trusting the JWT payload (so a demotion/deactivation takes
+// effect immediately rather than waiting for the token to expire). That means this
+// middleware unit test needs a User.findById stand-in rather than a live database;
+// the mock derives the role straight from the token's `sub` claim, which tokenFor()
+// encodes as `user:<role>`.
+jest.unstable_mockModule('../src/models/User.js', () => ({
+  default: {
+    findById: (id) => ({
+      select: async () => {
+        const role = String(id).split(':')[1];
+        return role ? { role, isActive: true } : null;
+      },
+    }),
+  },
+}));
+
+const { authenticate, authorize, requireFull, requireRole } = await import('../src/middleware/auth.js');
 
 const buildApp = () => {
   const app = express();
@@ -14,7 +33,7 @@ const buildApp = () => {
   return app;
 };
 
-const tokenFor = (role) => jwt.sign({ sub: 'user-1', role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+const tokenFor = (role) => jwt.sign({ sub: `user:${role}`, role }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
 describe('authenticate', () => {
   const app = buildApp();
@@ -32,7 +51,14 @@ describe('authenticate', () => {
   it('accepts a valid token and attaches req.user', async () => {
     const res = await request(app).get('/whoami').set('Authorization', `Bearer ${tokenFor('admin')}`);
     expect(res.status).toBe(200);
-    expect(res.body.user).toMatchObject({ id: 'user-1', role: 'admin' });
+    expect(res.body.user).toMatchObject({ id: 'user:admin', role: 'admin' });
+  });
+
+  it('rejects a token whose user the DB no longer recognizes (deleted/deactivated)', async () => {
+    // 'sub' has no ':<role>' suffix, so the User.findById mock resolves to null.
+    const token = jwt.sign({ sub: 'ghost', role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const res = await request(app).get('/whoami').set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(401);
   });
 });
 

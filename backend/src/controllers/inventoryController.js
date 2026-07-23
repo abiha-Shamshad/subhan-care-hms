@@ -14,11 +14,16 @@ export const createInventoryItem = asyncHandler(async (req, res) => {
   res.status(201).json(item);
 });
 
+// Excludes itemId/_id/timestamps/status (status is always derived, never client-set).
+const INVENTORY_EDITABLE_FIELDS = ['name', 'category', 'unit', 'quantity', 'reorderLevel', 'rate', 'supplier', 'expiry'];
+
 export const updateInventoryItem = asyncHandler(async (req, res) => {
   const item = await InventoryItem.findOne({ itemId: req.params.id });
   if (!item) return res.status(404).json({ message: 'Item not found' });
 
-  Object.assign(item, req.body);
+  for (const field of INVENTORY_EDITABLE_FIELDS) {
+    if (field in req.body) item[field] = req.body[field];
+  }
   await item.save(); // triggers pre('save') status derivation
   res.json(item);
 });

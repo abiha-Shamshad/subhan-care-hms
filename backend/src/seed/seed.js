@@ -5,6 +5,14 @@ import { seedDatabase } from './seedDatabase.js';
 import { DEMO_USERS } from './seedData.js';
 
 const run = async () => {
+  if (process.env.NODE_ENV === 'production') {
+    console.error(
+      'Refusing to run: NODE_ENV=production. This script wipes every collection and ' +
+        'reseeds demo accounts with known passwords — never point it at a live database.'
+    );
+    process.exit(1);
+  }
+
   await connectDB();
   const counts = await seedDatabase();
 

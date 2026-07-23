@@ -32,10 +32,23 @@ const passwordResetLimiter = rateLimit({
   handler: rateLimitResponse,
 });
 
+// Same window, but keyed by the target email instead of the caller's IP, so
+// rotating source IPs (cheap via proxies) can't be used to bypass the per-IP
+// limiter above and hammer one victim's account from many addresses.
+const emailKey = (req) => (req.body?.email || '').toLowerCase().trim() || req.ip;
+const passwordResetEmailLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: emailKey,
+  handler: rateLimitResponse,
+});
+
 router.post('/login', loginLimiter, login);
-router.post('/forgot-password', passwordResetLimiter, forgotPassword);
-router.post('/verify-otp', passwordResetLimiter, verifyOtp);
-router.post('/reset-password', passwordResetLimiter, resetPassword);
+router.post('/forgot-password', passwordResetLimiter, passwordResetEmailLimiter, forgotPassword);
+router.post('/verify-otp', passwordResetLimiter, passwordResetEmailLimiter, verifyOtp);
+router.post('/reset-password', passwordResetLimiter, passwordResetEmailLimiter, resetPassword);
 router.get('/me', authenticate, me);
 router.get('/permissions', authenticate, permissions);
 router.patch('/change-password', authenticate, changePassword);
